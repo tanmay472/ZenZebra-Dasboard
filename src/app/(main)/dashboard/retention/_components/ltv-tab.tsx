@@ -330,7 +330,7 @@ export function LtvTab({ hasData }: { hasData: boolean }) {
 										type="monotone"
 										name="LTV"
 										dataKey="ltv"
-										stroke="#3b82f6"
+										stroke="var(--chart-1)"
 										strokeWidth={2}
 										dot={{ r: 3 }}
 									/>
@@ -338,16 +338,18 @@ export function LtvTab({ hasData }: { hasData: boolean }) {
 										type="monotone"
 										name="AOV"
 										dataKey="aov"
-										stroke="#10b981"
+										stroke="var(--chart-3)"
 										strokeWidth={2}
+										strokeDasharray="6 3"
 										dot={{ r: 3 }}
 									/>
 									<Line
 										type="monotone"
 										name="CAC"
 										dataKey="cac"
-										stroke="#f59e0b"
+										stroke="var(--chart-4)"
 										strokeWidth={2}
+										strokeDasharray="2 2"
 										dot={{ r: 3 }}
 									/>
 								</LineChart>
@@ -387,7 +389,7 @@ export function LtvTab({ hasData }: { hasData: boolean }) {
 									/>
 									<Bar
 										dataKey="count"
-										fill="#3b82f6"
+										fill="var(--chart-1)"
 										radius={[4, 4, 0, 0]}
 										maxBarSize={40}
 									/>

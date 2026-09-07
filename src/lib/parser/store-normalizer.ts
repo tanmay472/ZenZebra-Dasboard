@@ -1,28 +1,59 @@
-export interface StoreMapping {
+/**
+ * A row's store was resolved to a real, known store via an exact
+ * `store_dimension` name match or a registered `store_alias_mapping` row.
+ */
+export interface ResolvedStore {
+	resolved: true;
 	storeId: number;
 	canonicalStore: string;
 	displayName: string;
 }
 
+/**
+ * A row's raw `billed_by` value matched neither `store_dimension` nor
+ * `store_alias_mapping`. This must never be silently coerced into an
+ * existing store (Phase 6A data-integrity fix) — the caller is required
+ * to handle this case explicitly (TypeScript enforces this via the
+ * `resolved` discriminant) rather than reading `canonicalStore`/`storeId`
+ * off an unresolved result.
+ */
+export interface UnresolvedStore {
+	resolved: false;
+	/** The original, unmodified raw value that failed to resolve. */
+	rawValue: string;
+}
+
+export type StoreResolution = ResolvedStore | UnresolvedStore;
+
 export interface StoreNormalizer {
-	normalize(rawBilledBy: string): StoreMapping;
+	normalize(rawBilledBy: string): StoreResolution;
 }
 
 /**
  * Fetches all aliases and store dimensions from the database and returns a normalizer instance.
+ *
+ * Phase 6A data-integrity fix: a raw store value that doesn't exactly match
+ * a `store_dimension.store_name` and has no registered `store_alias_mapping`
+ * row is returned as UNRESOLVED, never guessed. The prior version defaulted
+ * anything containing "klj" to "Klj store" and everything else — including
+ * a brand-new, never-seen store name — to "SmartworksNoida Noida". That
+ * meant a future/unmapped store's sales or purchase data could silently be
+ * attributed to the wrong physical store. A new store must be given an
+ * explicit `store_dimension`/`store_alias_mapping` row before its data can
+ * enter the canonical layer; this function will never invent one.
  */
 export async function createStoreNormalizer(
 	sql: any,
 ): Promise<StoreNormalizer> {
 	const aliases = await sql`
-		SELECT source_name, canonical_store 
-		FROM store_alias_mapping 
+		SELECT source_name, canonical_store
+		FROM store_alias_mapping
 		WHERE active = true
 	`;
 
 	const dimensions = await sql`
-		SELECT id, store_name, display_name 
-		FROM store_dimension 
+		SELECT id, store_name, display_name
+		FROM store_dimension
 		WHERE active = true
 	`;
 
@@ -45,24 +76,18 @@ export async function createStoreNormalizer(
 		aliasMap.set(a.source_name.toLowerCase().trim(), a.canonical_store);
 	}
 
-	// Find the Noida store for default fallback
-	const noidaStore = dimensions.find(
-		(d: any) => d.store_name === "SmartworksNoida Noida",
-	) ||
-		dimensions[0] || {
-			id: 1,
-			store_name: "SmartworksNoida Noida",
-			display_name: "Smart Works Noida",
-		};
-
 	return {
-		normalize(rawBilledBy: string): StoreMapping {
+		normalize(rawBilledBy: string): StoreResolution {
 			const cleanRaw = (rawBilledBy || "").trim().toLowerCase();
 
-			// Look up in alias map
+			if (!cleanRaw) {
+				return { resolved: false, rawValue: rawBilledBy ?? "" };
+			}
+
+			// Known alias?
 			let canonicalStore = aliasMap.get(cleanRaw);
 
-			// If not found in alias map, check if it's already a canonical name (case-insensitive)
+			// Not an alias — is it already an exact canonical store_dimension name?
 			if (!canonicalStore) {
 				const match = storeMap.get(cleanRaw);
 				if (match) {
@@ -70,30 +95,26 @@ export async function createStoreNormalizer(
 				}
 			}
 
-			// Strictly enforce that the canonicalStore must be in our storeMap (whitelist)
-			if (!canonicalStore || !storeMap.has(canonicalStore.toLowerCase())) {
-				if (cleanRaw.includes("klj")) {
-					canonicalStore = "Klj store";
-				} else {
-					canonicalStore = "SmartworksNoida Noida";
-				}
+			// No alias match and no exact dimension match — genuinely unknown.
+			// Never guess by substring ("klj" → Klj store) or default to any
+			// existing store.
+			if (!canonicalStore) {
+				return { resolved: false, rawValue: rawBilledBy };
 			}
 
-			// Look up dimensions for canonical store
 			const dim = storeMap.get(canonicalStore.toLowerCase());
-			if (dim) {
-				return {
-					storeId: dim.id,
-					canonicalStore: dim.store_name,
-					displayName: dim.display_name,
-				};
+			if (!dim) {
+				// An alias row points at a canonical_store that isn't an active
+				// store_dimension entry — a data-integrity problem in the
+				// mapping table itself, not something to paper over by guessing.
+				return { resolved: false, rawValue: rawBilledBy };
 			}
 
-			// Fallback to Noida
 			return {
-				storeId: noidaStore.id,
-				canonicalStore: noidaStore.store_name,
-				displayName: noidaStore.display_name,
+				resolved: true,
+				storeId: dim.id,
+				canonicalStore: dim.store_name,
+				displayName: dim.display_name,
 			};
 		},
 	};

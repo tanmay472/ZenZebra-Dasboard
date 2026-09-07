@@ -141,7 +141,7 @@ export async function runSyncPipeline(): Promise<void> {
 		const inventoryStart = new Date().toISOString();
 		let inventoryCount = 0;
 		try {
-			inventoryCount = await syncInventory(client);
+			inventoryCount = await syncInventory(client, null);
 			totalRecords += inventoryCount;
 			await logSyncTelemetry(
 				"inventory",

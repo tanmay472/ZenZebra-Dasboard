@@ -34,25 +34,28 @@ export function LtvCharts({
 	cohortsList,
 	aovChartData,
 }: LtvChartsProps) {
-	// Line colors to match gray/black/white base aesthetic
+	// Line colors to match gray/black/white base aesthetic — theme CSS
+	// variables so the palette stays grayscale-only while adapting contrast
+	// between light and dark mode (chart-1 is highest contrast, chart-5 the
+	// most subdued, per theme).
 	const lineColors = [
-		"#ffffff", // Pure white
-		"#e4e4e7", // zinc-200
-		"#a1a1aa", // zinc-400
-		"#71717a", // zinc-500
-		"#52525b", // zinc-600
-		"#3f3f46", // zinc-700
+		"var(--chart-1)",
+		"var(--chart-2)",
+		"var(--chart-3)",
+		"var(--chart-4)",
+		"var(--chart-5)",
+		"var(--muted-foreground)",
 	];
 
 	return (
 		<div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
 			{/* Cohort LTV Growth Chart */}
-			<div className="border-[0.5px] border-zinc-800 bg-zinc-950 p-6 rounded-[12px] flex flex-col gap-4">
+			<div className="border-[0.5px] border-border bg-card p-6 rounded-[12px] flex flex-col gap-4">
 				<div>
-					<h3 className="text-sm font-medium text-zinc-100 font-mono">
+					<h3 className="text-sm font-medium text-foreground font-mono">
 						Cohort LTV Growth
 					</h3>
-					<p className="text-xs text-zinc-500 mt-1">
+					<p className="text-xs text-muted-foreground mt-1">
 						LTV per cohort at month 0, month 3, and month 6
 					</p>
 				</div>
@@ -64,18 +67,18 @@ export function LtvCharts({
 						>
 							<CartesianGrid
 								strokeDasharray="3 3"
-								stroke="#27272a"
+								stroke="var(--border)"
 								vertical={false}
 							/>
 							<XAxis
 								dataKey="name"
-								stroke="#71717a"
+								stroke="var(--muted-foreground)"
 								fontSize={11}
 								tickLine={false}
 								axisLine={false}
 							/>
 							<YAxis
-								stroke="#71717a"
+								stroke="var(--muted-foreground)"
 								fontSize={11}
 								tickLine={false}
 								axisLine={false}
@@ -83,10 +86,10 @@ export function LtvCharts({
 							/>
 							<Tooltip
 								contentStyle={{
-									backgroundColor: "#09090b",
-									borderColor: "#27272a",
+									backgroundColor: "var(--popover)",
+									borderColor: "var(--border)",
 									borderRadius: "8px",
-									color: "#f4f4f5",
+									color: "var(--popover-foreground)",
 									fontSize: "11px",
 								}}
 								formatter={(value) => [`₹${value}`, "LTV"]}
@@ -98,6 +101,7 @@ export function LtvCharts({
 									dataKey={cohort}
 									stroke={lineColors[index % lineColors.length]}
 									strokeWidth={1.5}
+									strokeDasharray={index % 2 === 1 ? "6 3" : undefined}
 									dot={{ r: 3, strokeWidth: 1 }}
 									activeDot={{ r: 5 }}
 								/>
@@ -105,7 +109,11 @@ export function LtvCharts({
 							<Legend
 								verticalAlign="bottom"
 								align="center"
-								wrapperStyle={{ paddingTop: "15px", fontSize: "11px" }}
+								wrapperStyle={{
+									paddingTop: "15px",
+									fontSize: "11px",
+									color: "var(--muted-foreground)",
+								}}
 							/>
 						</LineChart>
 					</ResponsiveContainer>
@@ -113,12 +121,12 @@ export function LtvCharts({
 			</div>
 
 			{/* AOV Expansion Chart */}
-			<div className="border-[0.5px] border-zinc-800 bg-zinc-950 p-6 rounded-[12px] flex flex-col gap-4">
+			<div className="border-[0.5px] border-border bg-card p-6 rounded-[12px] flex flex-col gap-4">
 				<div>
-					<h3 className="text-sm font-medium text-zinc-100 font-mono">
+					<h3 className="text-sm font-medium text-foreground font-mono">
 						AOV Expansion
 					</h3>
-					<p className="text-xs text-zinc-500 mt-1">
+					<p className="text-xs text-muted-foreground mt-1">
 						AOV by order number (1st, 2nd, 3rd, 4th+)
 					</p>
 				</div>
@@ -130,18 +138,18 @@ export function LtvCharts({
 						>
 							<CartesianGrid
 								strokeDasharray="3 3"
-								stroke="#27272a"
+								stroke="var(--border)"
 								vertical={false}
 							/>
 							<XAxis
 								dataKey="name"
-								stroke="#71717a"
+								stroke="var(--muted-foreground)"
 								fontSize={11}
 								tickLine={false}
 								axisLine={false}
 							/>
 							<YAxis
-								stroke="#71717a"
+								stroke="var(--muted-foreground)"
 								fontSize={11}
 								tickLine={false}
 								axisLine={false}
@@ -149,17 +157,17 @@ export function LtvCharts({
 							/>
 							<Tooltip
 								contentStyle={{
-									backgroundColor: "#09090b",
-									borderColor: "#27272a",
+									backgroundColor: "var(--popover)",
+									borderColor: "var(--border)",
 									borderRadius: "8px",
-									color: "#f4f4f5",
+									color: "var(--popover-foreground)",
 									fontSize: "11px",
 								}}
 								formatter={(value) => [`₹${value}`, "AOV"]}
 							/>
 							<Bar
 								dataKey="aov"
-								fill="#ffffff"
+								fill="var(--chart-1)"
 								radius={[4, 4, 0, 0]}
 								barSize={45}
 							/>

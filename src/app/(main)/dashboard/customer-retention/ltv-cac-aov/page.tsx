@@ -38,6 +38,16 @@ export default async function LtvCacAovPage({ searchParams }: PageProps) {
 	const ltvData = await getLtvReportData(storeParam);
 	const cacData = await getCacReportData(sql, startDate, endDate, storeParam);
 
+	// Store list is data-driven (same query the sales dashboard's filter bar
+	// uses) so a new store added in Odoo appears here automatically once it
+	// has synced data — this used to be a hardcoded 2-store dropdown.
+	const storeRows = await sql`
+		SELECT DISTINCT billed_by FROM sales_fact_v
+		WHERE billed_by IS NOT NULL AND billed_by <> ''
+		ORDER BY billed_by
+	`;
+	const availableStores = storeRows.map((r) => String(r.billed_by));
+
 	const ltv = ltvData.ltv;
 	const hasMarketingSpendData = cacData.hasMarketingSpendData;
 	const cac = cacData.cac; // number | null when no marketing spend data exists
@@ -135,7 +145,7 @@ export default async function LtvCacAovPage({ searchParams }: PageProps) {
 						Calculated metrics based on data bounds (Nov 2025 – Jun 2026)
 					</p>
 				</div>
-				<StoreFilter currentStore={store} />
+				<StoreFilter currentStore={store} availableStores={availableStores} />
 			</div>
 
 			<Separator className="bg-zinc-900 h-[0.5px]" />
@@ -238,11 +248,19 @@ export default async function LtvCacAovPage({ searchParams }: PageProps) {
 						CAC Payback Period
 					</span>
 					<span className="text-3xl font-semibold text-white font-mono">
-						{cacData.paybackMonths}{" "}
-						<span className="text-xs text-zinc-500 font-sans">Months</span>
+						{cacData.paybackMonths === null ? (
+							"N/A"
+						) : (
+							<>
+								{cacData.paybackMonths}{" "}
+								<span className="text-xs text-zinc-500 font-sans">Months</span>
+							</>
+						)}
 					</span>
 					<span className="text-[10px] text-zinc-600">
-						Months required to recoup customer acquisition cost
+						{cacData.paybackMonths === null
+							? "Unavailable — no documented margin assumption to compute this from"
+							: "Months required to recoup customer acquisition cost"}
 					</span>
 				</Card>
 
@@ -317,10 +335,12 @@ export default async function LtvCacAovPage({ searchParams }: PageProps) {
 										{formatCurrency(row.aov, { noDecimals: true })}
 									</TableCell>
 									<TableCell className="text-xs text-right font-mono py-3 text-zinc-300">
-										{formatCurrency(row.margin, { noDecimals: true })}
+										{row.margin === null
+											? "N/A"
+											: formatCurrency(row.margin, { noDecimals: true })}
 									</TableCell>
 									<TableCell className="text-xs text-right font-mono py-3 font-semibold text-white">
-										{row.payback} Months
+										{row.payback === null ? "N/A" : `${row.payback} Months`}
 									</TableCell>
 								</TableRow>
 							))}

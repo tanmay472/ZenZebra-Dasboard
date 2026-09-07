@@ -110,12 +110,19 @@ export async function getCacMetrics(
 	const prevLtvCacRatio =
 		prevCac !== null && prevCac > 0 ? prevLtv / prevCac : null;
 
-	const aov = currOrders > 0 ? currRevenue / currOrders : 150;
-	const monthlyGrossProfitPerCustomer = aov * 0.26 * 1.5;
-	const paybackMonths =
-		currCac === null
-			? null
-			: currCac / Math.max(1, monthlyGrossProfitPerCustomer);
+	// No fabricated fallback — zero orders means AOV is genuinely unavailable
+	// for this period, not a plausible-sounding ₹150 (a prior version used
+	// that literal; Phase 6 audit confirmed it was never a real observed
+	// value for this business).
+	const aov = currOrders > 0 ? currRevenue / currOrders : 0;
+	// Payback requires a real monthly-margin-per-customer figure. No
+	// canonical margin assumption exists anywhere in this codebase or its
+	// docs for CAC payback specifically (the previous formula used an
+	// unexplained 26% margin * 1.5x purchase-frequency multiplier with no
+	// documented source — Phase 6 audit found no business justification
+	// for either number). Presenting a payback period built on unsupported
+	// assumptions would be more misleading than showing it as unavailable.
+	const paybackMonths: number | null = null;
 
 	return {
 		hasMarketingSpendData,
@@ -211,13 +218,26 @@ export async function getCacReportData(
 	);
 	const aov = aovMetrics.bills > 0 ? aovMetrics.revenue / aovMetrics.bills : 0;
 
-	const avgMonthlyMargin = aov * 0.26 * 1.5;
-	const paybackMonths =
-		cac !== null && avgMonthlyMargin > 0 ? cac / avgMonthlyMargin : null;
+	// Payback requires a real monthly-margin-per-customer figure, which
+	// requires a documented margin assumption. No such assumption exists
+	// anywhere in this codebase/docs (the previous formula's 26% margin *
+	// 1.5x frequency multiplier had no traceable source — Phase 6 audit).
+	// Unavailable is honest; a fabricated-but-plausible number is not.
+	const paybackMonths: number | null = null;
 
-	const storeOptions = [
-		{ name: "Smart Works Noida", key: "SmartworksNoida Noida" },
-		{ name: "KLJ Store", key: "Klj store" },
+	// Store rows are discovered dynamically from the same canonical source
+	// every other store breakdown in this app uses (billed_by on
+	// sales_fact_v) — a new store appears here automatically, with zero
+	// code change. This replaces a prior hardcoded 3-entry list
+	// (Smart Works Noida / Klj store / Overall) that made HQ27GGN and
+	// ZenZebra permanently invisible to this table.
+	const storeRows = (await db`
+		SELECT DISTINCT billed_by FROM sales_fact_v
+		WHERE billed_by IS NOT NULL AND billed_by <> ''
+		ORDER BY billed_by
+	`) as { billed_by: string }[];
+	const storeOptions: { name: string; key: string | null }[] = [
+		...storeRows.map((r) => ({ name: r.billed_by, key: r.billed_by })),
 		{ name: "Overall", key: null },
 	];
 
@@ -241,8 +261,6 @@ export async function getCacReportData(
 			);
 			const sAov =
 				sAovMetrics.bills > 0 ? sAovMetrics.revenue / sAovMetrics.bills : 0;
-			const sMargin = sAov * 0.26 * 1.5;
-			const sPayback = sCac !== null && sMargin > 0 ? sCac / sMargin : null;
 
 			return {
 				storeName: opt.name,
@@ -251,8 +269,10 @@ export async function getCacReportData(
 				newCustomers: sNewCount,
 				cac: sCac === null ? null : Math.round(sCac),
 				aov: Math.round(sAov),
-				margin: Math.round(sMargin),
-				payback: sPayback === null ? null : Math.round(sPayback * 10) / 10,
+				// margin/payback removed — see paybackMonths comment above;
+				// no documented assumption exists to compute either honestly.
+				margin: null as number | null,
+				payback: null as number | null,
 			};
 		}),
 	);
@@ -263,8 +283,7 @@ export async function getCacReportData(
 		newCustomers: newCustomersCount,
 		cac: cac === null ? null : Math.round(cac),
 		aov: Math.round(aov),
-		paybackMonths:
-			paybackMonths === null ? null : Math.round(paybackMonths * 10) / 10,
+		paybackMonths,
 		paybackTable,
 	};
 }

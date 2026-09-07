@@ -86,9 +86,22 @@ export async function commitNetPurchaseUploadFile(
 		}
 	> = {};
 
-	const mappedRows: ParsedNetPurchaseRow[] = parsed.rows.map((row) => {
+	// Unknown-store rows are quarantined, never silently attributed to an
+	// existing store (Phase 6A data-integrity fix). See store-normalizer.ts.
+	const mappedRows: ParsedNetPurchaseRow[] = [];
+	const unresolvedReasons: string[] = [];
+
+	for (const row of parsed.rows) {
 		const rawBilled = row.billed_by;
 		const mapping = normalizer.normalize(rawBilled);
+
+		if (!mapping.resolved) {
+			unresolvedReasons.push(
+				`Row (bill: ${row.bill_no || "unknown"}): Unknown store '${mapping.rawValue || "(empty)"}'. Store mapping is required before import.`,
+			);
+			continue;
+		}
+
 		if (!normalizationReport[mapping.canonicalStore]) {
 			normalizationReport[mapping.canonicalStore] = {
 				displayName: mapping.displayName,
@@ -102,13 +115,28 @@ export async function commitNetPurchaseUploadFile(
 				(reportItem.rawSourcesCount[rawBilled] || 0) + 1;
 			reportItem.totalRows += 1;
 		}
-		return {
+		mappedRows.push({
 			...row,
 			source_billed_by: rawBilled,
 			billed_by: mapping.canonicalStore,
 			store_id: mapping.storeId,
+		});
+	}
+
+	const totalQuarantined = parsed.quarantined + unresolvedReasons.length;
+	const quarantineReasons = [
+		...parsed.quarantine_reasons,
+		...unresolvedReasons,
+	];
+
+	if (mappedRows.length === 0) {
+		return {
+			success: false,
+			error: "No valid net purchase rows found. Cannot commit upload.",
+			quarantined: totalQuarantined,
+			quarantineReasons,
 		};
-	});
+	}
 
 	const dates = mappedRows.map((r) => r.purchase_date).sort();
 	const dateRange = { start: dates[0] ?? null, end: dates.at(-1) ?? null };
@@ -135,7 +163,7 @@ export async function commitNetPurchaseUploadFile(
           date_range_start, date_range_end, upload_type, net_purchase
         ) VALUES (
           ${batchId}, ${file.name}, 'success', ${parsed.raw_row_count},
-          ${mappedRows.length}, ${parsed.quarantined},
+          ${mappedRows.length}, ${totalQuarantined},
           ${dateRange.start}, ${dateRange.end}, ${uploadType}, ${netPurchase}::numeric
         )
       `,
@@ -194,8 +222,8 @@ export async function commitNetPurchaseUploadFile(
 		success: true,
 		batchId,
 		rowsInserted: mappedRows.length,
-		quarantined: parsed.quarantined,
-		quarantineReasons: parsed.quarantine_reasons,
+		quarantined: totalQuarantined,
+		quarantineReasons,
 		dateRange,
 		netPurchase,
 		normalizationReport,
@@ -283,9 +311,22 @@ export async function validateStagedNetPurchaseUpload(
 			}
 		> = {};
 
-		const mappedRows: ParsedNetPurchaseRow[] = parsed.rows.map((row) => {
+		// Unknown-store rows are quarantined, never silently attributed to an
+		// existing store (Phase 6A data-integrity fix). See store-normalizer.ts.
+		const mappedRows: ParsedNetPurchaseRow[] = [];
+		const unresolvedReasons: string[] = [];
+
+		for (const row of parsed.rows) {
 			const rawBilled = row.billed_by;
 			const mapping = normalizer.normalize(rawBilled);
+
+			if (!mapping.resolved) {
+				unresolvedReasons.push(
+					`Row (bill: ${row.bill_no || "unknown"}): Unknown store '${mapping.rawValue || "(empty)"}'. Store mapping is required before import.`,
+				);
+				continue;
+			}
+
 			if (!normalizationReport[mapping.canonicalStore]) {
 				normalizationReport[mapping.canonicalStore] = {
 					displayName: mapping.displayName,
@@ -299,13 +340,28 @@ export async function validateStagedNetPurchaseUpload(
 					(reportItem.rawSourcesCount[rawBilled] || 0) + 1;
 				reportItem.totalRows += 1;
 			}
-			return {
+			mappedRows.push({
 				...row,
 				source_billed_by: rawBilled,
 				billed_by: mapping.canonicalStore,
 				store_id: mapping.storeId,
+			});
+		}
+
+		const totalQuarantined = parsed.quarantined + unresolvedReasons.length;
+		const quarantineReasons = [
+			...parsed.quarantine_reasons,
+			...unresolvedReasons,
+		];
+
+		if (mappedRows.length === 0) {
+			return {
+				success: false,
+				error: "No valid net purchase rows found. Cannot commit upload.",
+				quarantined: totalQuarantined,
+				quarantineReasons,
 			};
-		});
+		}
 
 		const dates = mappedRows.map((r) => r.purchase_date).sort();
 		const dateRange = { start: dates[0] ?? null, end: dates.at(-1) ?? null };
@@ -318,8 +374,8 @@ export async function validateStagedNetPurchaseUpload(
 			success: true,
 			batchId,
 			rowsInserted: mappedRows.length,
-			quarantined: parsed.quarantined,
-			quarantineReasons: parsed.quarantine_reasons,
+			quarantined: totalQuarantined,
+			quarantineReasons,
 			dateRange,
 			netPurchase,
 			normalizationReport,

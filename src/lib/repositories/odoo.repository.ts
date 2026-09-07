@@ -517,6 +517,37 @@ export async function getLatestTelemetryStatus(): Promise<{
 	};
 }
 
+/**
+ * Real business-data freshness signature for /api/sales/dashboard's
+ * response cache — the GREATEST `updated_at`/`uploaded_at` across every
+ * table that actually feeds the dashboard's numbers (sales_fact_v's two
+ * sources, plus purchase data for profitability).
+ *
+ * This replaces using sync_telemetry.lastSyncAt as the cache-invalidation
+ * key: a forensic performance audit proved that value changes on nearly
+ * every poll cycle (every 1-8s) even when zero records actually changed —
+ * e.g. `products`/`customers`/`analytics_refresh` telemetry rows get
+ * written every cycle regardless of `hasChanges`. Keying the cache on that
+ * defeated the cache almost as fast as it was populated. These four
+ * columns, by contrast, are only ever written when a row is genuinely
+ * inserted/updated (upsertSalesLines/upsertSalesOrders only run their
+ * ON CONFLICT DO UPDATE when there's at least one real row; Excel uploads
+ * insert a new upload_batches row only on a real upload) — so this value
+ * is stable across routine no-op sync cycles and changes exactly when the
+ * dashboard's real numbers would change.
+ */
+export async function getDashboardDataFreshness(): Promise<string | null> {
+	const [row] = await sql`
+		SELECT GREATEST(
+			(SELECT MAX(updated_at) FROM fact_sales_orders),
+			(SELECT MAX(updated_at) FROM fact_sales_lines),
+			(SELECT MAX(uploaded_at) FROM upload_batches),
+			(SELECT MAX(updated_at) FROM purchase_orders)
+		)::text AS freshness
+	`;
+	return row?.freshness ?? null;
+}
+
 // ── Persisted sync dead-letter queue ─────────────────────────────────
 // Mirrors the existing webhook_events dead-letter pattern, but for jobs
 // that exhaust retries in the polling SyncQueueManager — previously only

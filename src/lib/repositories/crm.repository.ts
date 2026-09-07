@@ -89,10 +89,15 @@ export async function getCrmLeads(filters?: {
 	}
 }
 
-export async function getCrmPipelineSummary(): Promise<CrmPipelineSummary> {
+export async function getCrmPipelineSummary(filters?: {
+	store?: string;
+}): Promise<CrmPipelineSummary> {
 	try {
+		const store =
+			filters?.store && filters.store !== "ALL" ? filters.store : null;
+
 		const rows = await sql`
-			SELECT 
+			SELECT
 				COALESCE(SUM(expected_revenue), 0)::FLOAT AS "totalPipelineValue",
 				COUNT(*)::INT AS "totalLeads",
 				COALESCE(AVG(expected_revenue), 0)::FLOAT AS "avgDealSize",
@@ -101,16 +106,18 @@ export async function getCrmPipelineSummary(): Promise<CrmPipelineSummary> {
 					0
 				)::FLOAT AS "winRate"
 			FROM crm_leads
-			WHERE active = true;
+			WHERE active = true
+				AND (${store}::TEXT IS NULL OR store = ${store});
 		`;
 
 		const stageRows = await sql`
-			SELECT 
+			SELECT
 				stage,
 				COUNT(*)::INT AS count,
 				COALESCE(SUM(expected_revenue), 0)::FLOAT AS value
 			FROM crm_leads
 			WHERE active = true
+				AND (${store}::TEXT IS NULL OR store = ${store})
 			GROUP BY stage;
 		`;
 

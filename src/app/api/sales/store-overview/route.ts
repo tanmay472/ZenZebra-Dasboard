@@ -5,7 +5,9 @@ import {
 	formatDateShort,
 	getComparisonPeriods,
 } from "@/lib/business-logic/comparison";
+import { getStoreProfitability } from "@/lib/business-logic/profitability";
 import { getStoreCommandDefaultPeriod } from "@/lib/business-logic/store-command-period";
+import { getStorePerformance } from "@/lib/business-logic/store-performance";
 import { getStoreTrend } from "@/lib/business-logic/store-trend";
 import { sql } from "@/lib/db";
 import type { DashboardFilters } from "@/lib/founder/types";
@@ -108,10 +110,20 @@ export async function GET(req: NextRequest) {
 
 		// 1-2. Store performance, profitability, AOV/bills history, forecast, and
 		// diagnosis per store — shared with /api/sales/dashboard's rootCause field.
+		// getStoreDiagnostics takes performance/profitability as params (computed
+		// once here) rather than re-fetching them itself — see that function's
+		// doc comment for why (a forensic audit found this was being computed
+		// twice per /api/sales/dashboard request).
+		const [performances, storeProfitability] = await Promise.all([
+			getStorePerformance(sql, periods, filters),
+			getStoreProfitability(sql, periods, filters),
+		]);
 		const { hasPurchaseData, stores: storesData } = await getStoreDiagnostics(
 			sql,
 			periods,
 			filters,
+			performances,
+			storeProfitability,
 		);
 
 		// 3. Get normalized trends

@@ -108,7 +108,7 @@ export class SyncQueueManager {
 			} else if (job.type === "customers") {
 				count = await syncCustomers(client, job.lastSyncTime);
 			} else if (job.type === "inventory") {
-				count = await syncInventory(client);
+				count = await syncInventory(client, job.lastSyncTime);
 			} else if (job.type === "sales_orders") {
 				count = await syncSales(client, job.lastSyncTime);
 			} else if (job.type === "analytics_refresh") {

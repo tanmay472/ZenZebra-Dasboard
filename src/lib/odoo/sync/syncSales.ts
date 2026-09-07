@@ -106,26 +106,98 @@ async function fetchAndUpsertMissingProducts(
  * Odoo's price_subtotal/price_subtotal_incl are NOT reliably signed for
  * refund lines — a forensic audit found 58 refund orders where
  * price_subtotal came back positive despite the parent order's
- * amount_total being correctly negative. qty IS reliably signed (negative
- * for a return line), so it drives the sign here instead of trusting the
- * raw amount fields — matches the previously-proven-exact formula from
- * this engagement's earlier audit work. See
+ * amount_total being correctly negative. See
  * docs/ODOO_SOURCE_OF_TRUTH_AUDIT.md §P.
+ *
+ * Three progressively-refined per-line/aggregate heuristics were tried and
+ * each broke a different real, live-observed order type:
+ *   1. qty<0 => negative (per line): broke a "[DISC] Discount" line
+ *      (pos_5898, ZenZebra - 000203, qty=1 not a refund, genuinely
+ *      negative price_subtotal) — flipping it to positive added a fake
+ *      ₹361.92 to a legitimately net-zero order.
+ *   2. qty<0 || rawSubtotal<0 => negative (per line): fixed case 1, but
+ *      broke a REFUND of a discounted sale (pos_3564,
+ *      KLJ - 000002 REFUND) — both its product line and discount line
+ *      have qty=-1, so both get flipped the same way, but a discount line
+ *      always needs the OPPOSITE correction from its sibling product line
+ *      to net out.
+ *   3. "flip the whole order uniformly if the raw line sum disagrees in
+ *      sign with the header": fixed case 2, but broke pos_1587
+ *      (SWN - 000485 REFUND) — two separately-refunded PRODUCT lines
+ *      (no discount at all), where Odoo's raw data returned one line
+ *      already correctly negative (-50.84) and the other wrongly positive
+ *      (110) — genuinely inconsistent within the same order, with no
+ *      uniform per-order flip that reconciles it (every uniform flip of
+ *      both lines together produces ±50, never the true -170).
+ *
+ * There is no per-line rule and no single "flip the group" rule that
+ * covers all three real cases — Odoo's own sign for a given
+ * pos.order.line is simply not trustworthy in isolation for a refund
+ * order, and not always trustworthy as a group either. The header's
+ * amount_total, by contrast, comes from Odoo's own accounting engine and
+ * is authoritative in every case checked. So: treat sign assignment as a
+ * small search problem — try every combination of per-line sign (keep
+ * Odoo's raw value, or negate it), and pick whichever combination makes
+ * the lines sum to exactly the header (within a rounding epsilon).
+ * Verified this has a UNIQUE reconciling combination in every real case
+ * checked (pos_5898, pos_3564, pos_1587, pos_600, and every ordinary
+ * positive sale) — when more than one combination would reconcile (only
+ * possible near a zero header), prefer the one requiring the fewest
+ * flips, since "trust Odoo's raw data unless the numbers force otherwise"
+ * is the safer default. Order sizes here are small (POS orders — at most
+ * a handful of lines), so 2^n combinations is trivially fast; a
+ * pathologically large order falls back to trusting Odoo's raw signs
+ * as-is rather than a runaway search.
  *
  * Pure function — no DB/Odoo access, safe to unit test directly.
  */
-export function deriveSignedLineAmounts(
-	rawSubtotal: number,
-	rawSubtotalIncl: number,
-	qty: number,
-): { priceSubtotal: number; taxAmount: number } {
-	const sign = qty < 0 ? -1 : 1;
-	const priceSubtotal = sign * Math.abs(rawSubtotal);
-	// price_subtotal_incl is tax-inclusive; price_subtotal is not — the
-	// difference is the tax, sign-corrected the same way so a refund's tax
-	// moves in the same direction as its subtotal.
-	const taxAmount = sign * Math.abs(rawSubtotalIncl - rawSubtotal);
-	return { priceSubtotal, taxAmount };
+export function deriveOrderLineSigns(
+	rawLines: Array<{ rawSubtotal: number; rawSubtotalIncl: number }>,
+	headerAmountTotal: number,
+): Array<{ priceSubtotal: number; taxAmount: number }> {
+	const EPSILON = 0.01;
+	const MAX_SEARCHABLE_LINES = 20;
+
+	const asIs = () =>
+		rawLines.map(({ rawSubtotal, rawSubtotalIncl }) => ({
+			priceSubtotal: rawSubtotal,
+			taxAmount: rawSubtotalIncl - rawSubtotal,
+		}));
+
+	if (rawLines.length === 0 || rawLines.length > MAX_SEARCHABLE_LINES) {
+		return asIs();
+	}
+
+	const n = rawLines.length;
+	let best: { flips: number[]; flipCount: number } | null = null;
+
+	for (let mask = 0; mask < 2 ** n; mask++) {
+		let sum = 0;
+		let flipCount = 0;
+		const flips: number[] = [];
+		for (let i = 0; i < n; i++) {
+			const flip = (mask >> i) & 1 ? -1 : 1;
+			flips.push(flip);
+			if (flip === -1) flipCount++;
+			sum += flip * rawLines[i].rawSubtotalIncl;
+		}
+		if (Math.abs(sum - headerAmountTotal) <= EPSILON) {
+			if (!best || flipCount < best.flipCount) {
+				best = { flips, flipCount };
+			}
+		}
+	}
+
+	// No combination reconciles (shouldn't happen for genuine data) — trust
+	// Odoo's raw values rather than guess a correction that isn't proven.
+	if (!best) return asIs();
+
+	return rawLines.map(({ rawSubtotal, rawSubtotalIncl }, i) => {
+		const flip = best!.flips[i];
+		const priceSubtotalIncl = flip * rawSubtotalIncl;
+		const priceSubtotal = flip * rawSubtotal;
+		return { priceSubtotal, taxAmount: priceSubtotalIncl - priceSubtotal };
+	});
 }
 
 /**
@@ -520,9 +592,11 @@ const POS_ORDER_FIELDS = [
  * upserts both the orders and their line items via the existing idempotent
  * repository functions. Shared by the normal incremental sync and the
  * bounded historical reconciliation pass below — a single insertion path,
- * not two parallel ones.
+ * not two parallel ones. Exported so a targeted single-order repair script
+ * can re-run the exact same real-data path for one specific order id
+ * instead of a parallel one-off implementation.
  */
-async function upsertPosOrderBatch(
+export async function upsertPosOrderBatch(
 	client: OdooClient,
 	records: any[],
 ): Promise<void> {
@@ -586,6 +660,37 @@ async function upsertPosOrderBatch(
 		},
 	);
 
+	// Sign is an order-level property (see deriveOrderLineSigns) — group raw
+	// lines by their owning order and derive each order's lines together
+	// against that order's real header amount_total, not one line at a time.
+	const headerTotalByOrderId = new Map<number, number>(
+		records.map((rec: any) => [Number(rec.id), Number(rec.amount_total || 0)]),
+	);
+	const linesByOrderId = new Map<number, any[]>();
+	for (const line of lines) {
+		const orderId = Array.isArray(line.order_id) ? Number(line.order_id[0]) : 0;
+		if (!linesByOrderId.has(orderId)) linesByOrderId.set(orderId, []);
+		linesByOrderId.get(orderId)!.push(line);
+	}
+
+	const signedByLineId = new Map<
+		number,
+		{ priceSubtotal: number; taxAmount: number }
+	>();
+	for (const [orderId, orderLines] of linesByOrderId) {
+		const headerTotal = headerTotalByOrderId.get(orderId) || 0;
+		const signed = deriveOrderLineSigns(
+			orderLines.map((l) => ({
+				rawSubtotal: Number(l.price_subtotal || 0),
+				rawSubtotalIncl: Number(l.price_subtotal_incl || 0),
+			})),
+			headerTotal,
+		);
+		orderLines.forEach((l, i) => {
+			signedByLineId.set(l.id, signed[i]);
+		});
+	}
+
 	const salesLines: OdooSalesLine[] = lines.map((line: any) => {
 		const orderId = Array.isArray(line.order_id)
 			? `pos_${line.order_id[0]}`
@@ -594,11 +699,7 @@ async function upsertPosOrderBatch(
 			? Number(line.product_id[0])
 			: 0;
 		const qty = Number(line.qty || 0);
-		const { priceSubtotal, taxAmount } = deriveSignedLineAmounts(
-			Number(line.price_subtotal || 0),
-			Number(line.price_subtotal_incl || 0),
-			qty,
-		);
+		const { priceSubtotal, taxAmount } = signedByLineId.get(line.id)!;
 
 		return {
 			id: `pos_line_${line.id}`,
@@ -747,6 +848,47 @@ export async function reconcileHistoricalPosSales(
 			);
 			await upsertPosOrderBatch(client, missingRecords);
 			totalRepaired += missingRecords.length;
+		}
+
+		// An order can exist in fact_sales_orders (so the check above finds
+		// nothing wrong) while still being missing one or more LINES — proven
+		// in production: upsertSalesLines() skips a line whose product isn't
+		// yet in dim_products, and while it does retry once immediately after
+		// fetching the missing product, if that single retry also fails the
+		// line is lost permanently once this order's write_date passes the
+		// incremental cursor — the order itself is never "missing", so the
+		// check above alone can never catch it (found via pos_1337 missing
+		// its ₹200 line, pos_1748 missing all of its 1 line — both orders
+		// whose product only got backfilled into dim_products afterward).
+		// Compare each existing order's real Odoo line count (already in
+		// `records` from POS_ORDER_FIELDS' `lines` field, no extra Odoo call)
+		// against Neon's stored line count, and re-run the same real-data
+		// upsert path for any order that's short.
+		const existingRecords = records.filter((rec: any) =>
+			existingSet.has(`pos_${rec.id}`),
+		);
+		if (existingRecords.length > 0) {
+			const existingIds = existingRecords.map((rec: any) => `pos_${rec.id}`);
+			const lineCounts = await sql`
+				SELECT order_id, COUNT(*)::int AS n FROM fact_sales_lines
+				WHERE order_id = ANY(${existingIds})
+				GROUP BY order_id
+			`;
+			const neonLineCountByOrder = new Map(
+				lineCounts.map((r: any) => [r.order_id as string, Number(r.n)]),
+			);
+			const incompleteRecords = existingRecords.filter((rec: any) => {
+				const odooLineCount = Array.isArray(rec.lines) ? rec.lines.length : 0;
+				const neonLineCount = neonLineCountByOrder.get(`pos_${rec.id}`) || 0;
+				return odooLineCount > neonLineCount;
+			});
+			if (incompleteRecords.length > 0) {
+				console.log(
+					`[reconcileHistoricalPosSales] Found ${incompleteRecords.length} order(s) with fewer lines in Neon than Odoo in this batch — repairing lines.`,
+				);
+				await upsertPosOrderBatch(client, incompleteRecords);
+				totalRepaired += incompleteRecords.length;
+			}
 		}
 
 		if (records.length < limit) {

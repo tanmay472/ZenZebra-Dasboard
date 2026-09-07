@@ -7,7 +7,7 @@ console.log("==================================================");
 
 const child = spawn(
 	"npx",
-	["ts-node", "-P", "tsconfig.scripts.json", "src/scripts/start-sync-worker.ts"],
+	["ts-node", "-P", "tsconfig.scripts.json", "src/scripts/sync/start-sync-worker.ts"],
 	{
 		stdio: "inherit",
 		shell: true,

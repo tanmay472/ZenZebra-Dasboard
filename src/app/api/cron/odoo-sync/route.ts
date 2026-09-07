@@ -305,7 +305,7 @@ export async function GET(req: NextRequest) {
 		// Inventory (stock.quant snapshot)
 		const inventoryStart = new Date().toISOString();
 		try {
-			const count = await syncInventory(client);
+			const count = await syncInventory(client, null);
 			totalRecords += count;
 			await logSyncTelemetry(
 				"inventory",

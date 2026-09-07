@@ -41,36 +41,60 @@ export async function validateFounderUploadFile(
 			}
 		> = {};
 
-		const mappedRows: ParsedSalesRow[] = validationResult.validData.map(
-			(row) => {
-				const rawBilled = row.billed_by;
-				const mapping = normalizer.normalize(rawBilled);
+		// Unknown-store rows are quarantined, never silently attributed to an
+		// existing store (Phase 6A data-integrity fix). See store-normalizer.ts.
+		const mappedRows: ParsedSalesRow[] = [];
+		const unresolvedReasons: string[] = [];
 
-				if (!normalizationReport[mapping.canonicalStore]) {
-					normalizationReport[mapping.canonicalStore] = {
-						displayName: mapping.displayName,
-						rawSourcesCount: {},
-						totalRows: 0,
-					};
-				}
+		for (const row of validationResult.validData) {
+			const rawBilled = row.billed_by;
+			const mapping = normalizer.normalize(rawBilled);
 
-				const storeReport = normalizationReport[mapping.canonicalStore]!;
-				storeReport.rawSourcesCount[rawBilled] =
-					(storeReport.rawSourcesCount[rawBilled] || 0) + 1;
-				storeReport.totalRows += 1;
+			if (!mapping.resolved) {
+				unresolvedReasons.push(
+					`Row (bill: ${row.bill_no || "unknown"}): Unknown store '${mapping.rawValue || "(empty)"}'. Store mapping is required before import.`,
+				);
+				continue;
+			}
 
-				return {
-					...row,
-					source_billed_by: rawBilled,
-					billed_by: mapping.canonicalStore,
-					store_id: mapping.storeId,
+			if (!normalizationReport[mapping.canonicalStore]) {
+				normalizationReport[mapping.canonicalStore] = {
+					displayName: mapping.displayName,
+					rawSourcesCount: {},
+					totalRows: 0,
 				};
-			},
-		);
+			}
+
+			const storeReport = normalizationReport[mapping.canonicalStore]!;
+			storeReport.rawSourcesCount[rawBilled] =
+				(storeReport.rawSourcesCount[rawBilled] || 0) + 1;
+			storeReport.totalRows += 1;
+
+			mappedRows.push({
+				...row,
+				source_billed_by: rawBilled,
+				billed_by: mapping.canonicalStore,
+				store_id: mapping.storeId,
+			});
+		}
 
 		return {
 			...validationResult,
+			isValid: validationResult.isValid && mappedRows.length > 0,
 			validData: mappedRows,
+			validRows: mappedRows.length,
+			errorCount: validationResult.errorCount + unresolvedReasons.length,
+			errors: [
+				...validationResult.errors,
+				...unresolvedReasons.map((reason, index) => ({
+					rowNumber: validationResult.validData.length + index,
+					errors: [reason],
+				})),
+			],
+			quarantineReasons: [
+				...(validationResult.quarantineReasons ?? []),
+				...unresolvedReasons,
+			],
 			normalizationReport,
 		};
 	} catch (error) {
@@ -372,36 +396,60 @@ export async function validateStagedFounderUpload(
 			}
 		> = {};
 
-		const mappedRows: ParsedSalesRow[] = validationResult.validData.map(
-			(row) => {
-				const rawBilled = row.billed_by;
-				const mapping = normalizer.normalize(rawBilled);
+		// Unknown-store rows are quarantined, never silently attributed to an
+		// existing store (Phase 6A data-integrity fix). See store-normalizer.ts.
+		const mappedRows: ParsedSalesRow[] = [];
+		const unresolvedReasons: string[] = [];
 
-				if (!normalizationReport[mapping.canonicalStore]) {
-					normalizationReport[mapping.canonicalStore] = {
-						displayName: mapping.displayName,
-						rawSourcesCount: {},
-						totalRows: 0,
-					};
-				}
+		for (const row of validationResult.validData) {
+			const rawBilled = row.billed_by;
+			const mapping = normalizer.normalize(rawBilled);
 
-				const storeReport = normalizationReport[mapping.canonicalStore]!;
-				storeReport.rawSourcesCount[rawBilled] =
-					(storeReport.rawSourcesCount[rawBilled] || 0) + 1;
-				storeReport.totalRows += 1;
+			if (!mapping.resolved) {
+				unresolvedReasons.push(
+					`Row (bill: ${row.bill_no || "unknown"}): Unknown store '${mapping.rawValue || "(empty)"}'. Store mapping is required before import.`,
+				);
+				continue;
+			}
 
-				return {
-					...row,
-					source_billed_by: rawBilled,
-					billed_by: mapping.canonicalStore,
-					store_id: mapping.storeId,
+			if (!normalizationReport[mapping.canonicalStore]) {
+				normalizationReport[mapping.canonicalStore] = {
+					displayName: mapping.displayName,
+					rawSourcesCount: {},
+					totalRows: 0,
 				};
-			},
-		);
+			}
+
+			const storeReport = normalizationReport[mapping.canonicalStore]!;
+			storeReport.rawSourcesCount[rawBilled] =
+				(storeReport.rawSourcesCount[rawBilled] || 0) + 1;
+			storeReport.totalRows += 1;
+
+			mappedRows.push({
+				...row,
+				source_billed_by: rawBilled,
+				billed_by: mapping.canonicalStore,
+				store_id: mapping.storeId,
+			});
+		}
 
 		return {
 			...validationResult,
+			isValid: validationResult.isValid && mappedRows.length > 0,
 			validData: mappedRows,
+			validRows: mappedRows.length,
+			errorCount: validationResult.errorCount + unresolvedReasons.length,
+			errors: [
+				...validationResult.errors,
+				...unresolvedReasons.map((reason, index) => ({
+					rowNumber: validationResult.validData.length + index,
+					errors: [reason],
+				})),
+			],
+			quarantineReasons: [
+				...(validationResult.quarantineReasons ?? []),
+				...unresolvedReasons,
+			],
 			normalizationReport,
 		};
 	} catch (error) {

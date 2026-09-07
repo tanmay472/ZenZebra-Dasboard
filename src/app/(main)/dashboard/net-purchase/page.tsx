@@ -71,22 +71,27 @@ interface ComparisonData {
 
 // ── Helpers ──────────────────────────────────────────────────────────────
 
+// Grayscale-only chart palette (dashboard-wide chart color standard) — these
+// reference the theme's --chart-1..5 tokens, which are ordered for maximum
+// contrast against the current theme's background in both light and dark
+// mode (see globals.css). No hue, so distinctness for the multi-series
+// charts below also relies on line/dash/opacity, not color alone.
 const CHART_COLORS = {
-	primary: "hsl(221, 83%, 53%)",
-	secondary: "hsl(262, 83%, 58%)",
-	accent: "hsl(173, 80%, 40%)",
-	muted: "hsl(215, 20%, 65%)",
-	warning: "hsl(38, 92%, 50%)",
-	danger: "hsl(0, 84%, 60%)",
+	primary: "var(--chart-1)",
+	secondary: "var(--chart-2)",
+	accent: "var(--chart-3)",
+	muted: "var(--chart-4)",
+	warning: "var(--chart-2)",
+	danger: "var(--chart-1)",
 };
 
 const STORE_COLORS = [
-	"hsl(221, 83%, 53%)",
-	"hsl(262, 83%, 58%)",
-	"hsl(173, 80%, 40%)",
-	"hsl(38, 92%, 50%)",
-	"hsl(339, 90%, 51%)",
-	"hsl(142, 71%, 45%)",
+	"var(--chart-1)",
+	"var(--chart-2)",
+	"var(--chart-3)",
+	"var(--chart-4)",
+	"var(--chart-5)",
+	"var(--muted-foreground)",
 ];
 
 function CustomTooltip({ active, payload, label }: any) {

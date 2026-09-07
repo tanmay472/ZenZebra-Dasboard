@@ -302,20 +302,28 @@ export function SegmentsHealthTab({ hasData }: { hasData: boolean }) {
 	// Chart data formatting — must be declared BEFORE any early returns (Rules of Hooks)
 	const rfmChartData = useMemo(() => {
 		return [
-			{ name: "Champions", value: segmentCounts.Champions, color: "#10b981" },
-			{ name: "Loyal", value: segmentCounts.Loyal, color: "#3b82f6" },
-			{ name: "At risk", value: segmentCounts["At Risk"], color: "#f59e0b" },
-			{ name: "Lost", value: segmentCounts.Lost, color: "#ef4444" },
+			{
+				name: "Champions",
+				value: segmentCounts.Champions,
+				color: "var(--chart-1)",
+			},
+			{ name: "Loyal", value: segmentCounts.Loyal, color: "var(--chart-2)" },
+			{
+				name: "At risk",
+				value: segmentCounts["At Risk"],
+				color: "var(--chart-3)",
+			},
+			{ name: "Lost", value: segmentCounts.Lost, color: "var(--chart-5)" },
 		].filter((d) => d.value > 0);
 	}, [segmentCounts]);
 
 	const typeChartData = useMemo(() => {
 		return [
-			{ name: "New", value: newVsReturningCounts.New, color: "#8b5cf6" },
+			{ name: "New", value: newVsReturningCounts.New, color: "var(--chart-1)" },
 			{
 				name: "Returning",
 				value: newVsReturningCounts.Returning,
-				color: "#3b82f6",
+				color: "var(--chart-4)",
 			},
 		].filter((d) => d.value > 0);
 	}, [newVsReturningCounts]);
@@ -402,14 +410,14 @@ export function SegmentsHealthTab({ hasData }: { hasData: boolean }) {
 	};
 
 	return (
-		<div className="flex flex-col gap-6 text-zinc-100 font-sans">
+		<div className="flex flex-col gap-6 text-foreground font-sans">
 			{/* Header Section */}
 			<div className="flex flex-wrap items-center justify-between gap-3">
 				<div>
-					<h2 className="text-xl font-semibold tracking-tight text-white font-mono">
+					<h2 className="text-xl font-semibold tracking-tight text-foreground font-mono">
 						Health & Segments
 					</h2>
-					<p className="text-xs text-zinc-500">
+					<p className="text-xs text-muted-foreground">
 						Customer type filters recalculate health score, segment mix, and AOV
 						stability together.
 					</p>
@@ -421,10 +429,10 @@ export function SegmentsHealthTab({ hasData }: { hasData: boolean }) {
 						setCurrentPage(1);
 					}}
 				>
-					<SelectTrigger className="w-[190px] h-9 text-xs bg-zinc-950 border-zinc-800 text-zinc-100 rounded-lg focus:ring-0">
+					<SelectTrigger className="w-[190px] h-9 text-xs rounded-lg focus:ring-0">
 						<SelectValue placeholder="All Customers" />
 					</SelectTrigger>
-					<SelectContent className="bg-zinc-950 border-zinc-800 text-zinc-100">
+					<SelectContent>
 						<SelectItem value="all">All Customers</SelectItem>
 						<SelectItem value="new">New Customers</SelectItem>
 						<SelectItem value="existing">Existing Customers</SelectItem>
@@ -436,17 +444,19 @@ export function SegmentsHealthTab({ hasData }: { hasData: boolean }) {
 			<div className="grid gap-6 grid-cols-1 xl:grid-cols-[1.1fr_0.9fr]">
 				<div className="flex flex-col gap-6">
 					{/* Customer health index Card */}
-					<Card className="border-[0.5px] border-zinc-800 bg-zinc-950 p-6 rounded-[12px] shadow-none flex flex-col gap-4">
+					<Card className="border-[0.5px] border-border bg-card p-6 rounded-[12px] shadow-none flex flex-col gap-4">
 						<div className="flex items-center justify-between">
 							<div className="flex flex-col gap-0.5">
-								<h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 font-mono">
+								<h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground font-mono">
 									Customer health index
 								</h3>
 								<div className="flex items-baseline gap-1 mt-1">
-									<span className="text-5xl font-bold font-mono tracking-tight text-white">
+									<span className="text-5xl font-bold font-mono tracking-tight text-foreground">
 										{averageHealthScore}
 									</span>
-									<span className="text-zinc-600 text-sm font-mono">/ 100</span>
+									<span className="text-muted-foreground text-sm font-mono">
+										/ 100
+									</span>
 								</div>
 							</div>
 							<Badge
@@ -457,19 +467,19 @@ export function SegmentsHealthTab({ hasData }: { hasData: boolean }) {
 						</div>
 						<Progress
 							value={averageHealthScore}
-							className="h-2 w-full bg-zinc-900"
+							className="h-2 w-full bg-muted"
 						/>
-						<p className="text-[10px] text-zinc-500 font-mono">
+						<p className="text-[10px] text-muted-foreground font-mono">
 							Weighted: retention 40, frequency 25, AOV growth 20, churn risk 15
 						</p>
 					</Card>
 
 					{/* Donut Charts Card */}
-					<Card className="border-[0.5px] border-zinc-800 bg-zinc-950 p-6 rounded-[12px] shadow-none flex flex-col gap-4">
-						<div className="grid grid-cols-1 md:grid-cols-2 gap-8 divide-y md:divide-y-0 md:divide-x divide-zinc-900">
+					<Card className="border-[0.5px] border-border bg-card p-6 rounded-[12px] shadow-none flex flex-col gap-4">
+						<div className="grid grid-cols-1 md:grid-cols-2 gap-8 divide-y md:divide-y-0 md:divide-x divide-border">
 							{/* RFM Segments */}
 							<div className="flex flex-col items-center">
-								<h4 className="text-xs font-medium text-zinc-300 font-mono self-start mb-6">
+								<h4 className="text-xs font-medium text-foreground/80 font-mono self-start mb-6">
 									RFM segments
 								</h4>
 								<div className="relative size-40 flex items-center justify-center">
@@ -492,17 +502,17 @@ export function SegmentsHealthTab({ hasData }: { hasData: boolean }) {
 										</PieChart>
 									</ResponsiveContainer>
 									<div className="absolute flex flex-col items-center justify-center">
-										<span className="text-sm font-semibold text-zinc-100 font-mono">
+										<span className="text-sm font-semibold text-foreground font-mono">
 											{total.toLocaleString()}
 										</span>
-										<span className="text-[9px] text-zinc-500 font-mono uppercase tracking-wider">
+										<span className="text-[9px] text-muted-foreground font-mono uppercase tracking-wider">
 											Total
 										</span>
 									</div>
 								</div>
 
 								{/* Legends */}
-								<div className="flex flex-col gap-2 mt-6 text-[11px] font-mono text-zinc-400 w-full">
+								<div className="flex flex-col gap-2 mt-6 text-[11px] font-mono text-muted-foreground w-full">
 									{rfmChartData.map((item) => (
 										<div key={item.name} className="flex items-center gap-2">
 											<span
@@ -520,7 +530,7 @@ export function SegmentsHealthTab({ hasData }: { hasData: boolean }) {
 
 							{/* New vs Returning */}
 							<div className="flex flex-col items-center md:pl-8">
-								<h4 className="text-xs font-medium text-zinc-300 font-mono self-start mb-6">
+								<h4 className="text-xs font-medium text-foreground/80 font-mono self-start mb-6">
 									New vs returning
 								</h4>
 								<div className="relative size-40 flex items-center justify-center">
@@ -543,17 +553,17 @@ export function SegmentsHealthTab({ hasData }: { hasData: boolean }) {
 										</PieChart>
 									</ResponsiveContainer>
 									<div className="absolute flex flex-col items-center justify-center">
-										<span className="text-sm font-semibold text-zinc-100 font-mono">
+										<span className="text-sm font-semibold text-foreground font-mono">
 											{total.toLocaleString()}
 										</span>
-										<span className="text-[9px] text-zinc-500 font-mono uppercase tracking-wider">
+										<span className="text-[9px] text-muted-foreground font-mono uppercase tracking-wider">
 											Total
 										</span>
 									</div>
 								</div>
 
 								{/* Legends */}
-								<div className="flex flex-col gap-2 mt-6 text-[11px] font-mono text-zinc-400 w-full">
+								<div className="flex flex-col gap-2 mt-6 text-[11px] font-mono text-muted-foreground w-full">
 									{typeChartData.map((item) => (
 										<div key={item.name} className="flex items-center gap-2">
 											<span
@@ -573,19 +583,19 @@ export function SegmentsHealthTab({ hasData }: { hasData: boolean }) {
 				</div>
 
 				{/* AOV Trend Chart */}
-				<Card className="border-[0.5px] border-zinc-800 bg-zinc-950 p-6 rounded-[12px] shadow-none flex flex-col gap-4">
+				<Card className="border-[0.5px] border-border bg-card p-6 rounded-[12px] shadow-none flex flex-col gap-4">
 					<div className="flex items-start justify-between gap-3">
 						<div>
-							<h3 className="text-sm font-medium text-zinc-300 font-mono uppercase tracking-wider">
+							<h3 className="text-sm font-medium text-foreground/80 font-mono uppercase tracking-wider">
 								AOV trend
 							</h3>
-							<p className="text-xs text-zinc-500 mt-1">
+							<p className="text-xs text-muted-foreground mt-1">
 								Track spending stability month by month for the selected
 								customer cohort.
 							</p>
 						</div>
 						<Badge
-							className={`rounded-[4px] border font-mono text-[10px] px-1.5 py-0.5 ${aovTrend.status === "Increasing" ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" : aovTrend.status === "Decreasing" ? "bg-red-500/10 text-red-500 border-red-500/20" : "bg-zinc-800/50 text-zinc-400 border-zinc-700/50"}`}
+							className={`rounded-[4px] border font-mono text-[10px] px-1.5 py-0.5 ${aovTrend.status === "Increasing" ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" : aovTrend.status === "Decreasing" ? "bg-red-500/10 text-red-500 border-red-500/20" : "bg-muted/50 text-muted-foreground border-border"}`}
 						>
 							{aovTrend.status}
 						</Badge>
@@ -598,28 +608,28 @@ export function SegmentsHealthTab({ hasData }: { hasData: boolean }) {
 							>
 								<CartesianGrid
 									strokeDasharray="3 3"
-									stroke="#27272a"
+									stroke="var(--border)"
 									vertical={false}
 								/>
 								<XAxis
 									dataKey="month"
-									stroke="#71717a"
+									stroke="var(--muted-foreground)"
 									fontSize={11}
 									tickLine={false}
 									axisLine={false}
 								/>
 								<YAxis
-									stroke="#71717a"
+									stroke="var(--muted-foreground)"
 									fontSize={11}
 									tickLine={false}
 									axisLine={false}
 								/>
 								<RechartsTooltip
 									contentStyle={{
-										backgroundColor: "#09090b",
-										borderColor: "#27272a",
+										backgroundColor: "var(--popover)",
+										borderColor: "var(--border)",
 										borderRadius: "8px",
-										color: "#f4f4f5",
+										color: "var(--popover-foreground)",
 										fontSize: "11px",
 									}}
 									formatter={(v) => [`₹${v}`, "AOV"]}
@@ -627,9 +637,9 @@ export function SegmentsHealthTab({ hasData }: { hasData: boolean }) {
 								<Line
 									type="monotone"
 									dataKey="aov"
-									stroke="#10b981"
+									stroke="var(--chart-1)"
 									strokeWidth={2}
-									dot={{ r: 4, strokeWidth: 0, fill: "#10b981" }}
+									dot={{ r: 4, strokeWidth: 0, fill: "var(--chart-1)" }}
 									activeDot={{ r: 6 }}
 								/>
 							</LineChart>
@@ -639,13 +649,13 @@ export function SegmentsHealthTab({ hasData }: { hasData: boolean }) {
 			</div>
 
 			{/* Customer Segment List */}
-			<Card className="border-[0.5px] border-zinc-800 bg-zinc-950 rounded-[12px] shadow-none overflow-hidden">
-				<CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between pb-4 border-b border-zinc-900">
+			<Card className="border-[0.5px] border-border bg-card rounded-[12px] shadow-none overflow-hidden">
+				<CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between pb-4 border-b border-border">
 					<div className="flex flex-col gap-1">
-						<CardTitle className="text-sm font-semibold tracking-tight text-white font-mono">
+						<CardTitle className="text-sm font-semibold tracking-tight text-foreground font-mono">
 							Customer Segment List
 						</CardTitle>
-						<CardDescription className="text-zinc-500 text-xs">
+						<CardDescription className="text-muted-foreground text-xs">
 							Filtered customer list with recalculated health, segment, and
 							customer type.
 						</CardDescription>
@@ -653,10 +663,10 @@ export function SegmentsHealthTab({ hasData }: { hasData: boolean }) {
 
 					<div className="flex items-center gap-3 w-full sm:w-auto">
 						<div className="relative w-full sm:w-[220px]">
-							<Search className="absolute left-2.5 top-2.5 size-4 text-zinc-500" />
+							<Search className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
 							<Input
 								placeholder="Search name or mobile"
-								className="pl-9 h-9 text-xs w-full bg-zinc-950 border-[0.5px] border-zinc-800 text-zinc-100 rounded-lg focus-visible:ring-0 focus-visible:ring-offset-0"
+								className="pl-9 h-9 text-xs w-full border-[0.5px] border-border text-foreground rounded-lg focus-visible:ring-0 focus-visible:ring-offset-0"
 								value={searchQuery}
 								onChange={(e) => {
 									setSearchQuery(e.target.value);
@@ -668,7 +678,7 @@ export function SegmentsHealthTab({ hasData }: { hasData: boolean }) {
 							variant="outline"
 							size="sm"
 							onClick={handleExport}
-							className="h-9 px-3 bg-zinc-950 border-[0.5px] border-zinc-800 text-xs text-zinc-100 hover:bg-zinc-900 rounded-lg flex items-center gap-1.5 shrink-0"
+							className="h-9 px-3 border-[0.5px] border-border text-xs text-foreground hover:bg-muted rounded-lg flex items-center gap-1.5 shrink-0"
 						>
 							<Download className="size-4" />
 							Export PDF
@@ -678,24 +688,24 @@ export function SegmentsHealthTab({ hasData }: { hasData: boolean }) {
 
 				<div className="overflow-x-auto w-full">
 					<Table className="min-w-[760px] border-collapse">
-						<TableHeader className="border-b-[0.5px] border-zinc-900">
-							<TableRow className="border-b-[0.5px] border-zinc-900 bg-zinc-950/20 hover:bg-zinc-950/20">
-								<TableHead className="font-semibold text-xs py-3 pl-4 text-zinc-500 font-mono h-10">
+						<TableHeader className="border-b-[0.5px] border-border">
+							<TableRow className="border-b-[0.5px] border-border bg-card/60 hover:bg-card/60">
+								<TableHead className="font-semibold text-xs py-3 pl-4 text-muted-foreground font-mono h-10">
 									Customer
 								</TableHead>
-								<TableHead className="font-semibold text-xs py-3 text-center text-zinc-500 font-mono h-10">
+								<TableHead className="font-semibold text-xs py-3 text-center text-muted-foreground font-mono h-10">
 									Customer Type
 								</TableHead>
-								<TableHead className="font-semibold text-xs py-3 text-center text-zinc-500 font-mono h-10">
+								<TableHead className="font-semibold text-xs py-3 text-center text-muted-foreground font-mono h-10">
 									Health Score
 								</TableHead>
-								<TableHead className="font-semibold text-xs py-3 text-center text-zinc-500 font-mono h-10">
+								<TableHead className="font-semibold text-xs py-3 text-center text-muted-foreground font-mono h-10">
 									Segment
 								</TableHead>
-								<TableHead className="font-semibold text-xs py-3 text-right text-zinc-500 font-mono h-10">
+								<TableHead className="font-semibold text-xs py-3 text-right text-muted-foreground font-mono h-10">
 									Last Purchase
 								</TableHead>
-								<TableHead className="font-semibold text-xs py-3 text-center pr-4 text-zinc-500 font-mono h-10">
+								<TableHead className="font-semibold text-xs py-3 text-center pr-4 text-muted-foreground font-mono h-10">
 									Actions
 								</TableHead>
 							</TableRow>
@@ -705,7 +715,7 @@ export function SegmentsHealthTab({ hasData }: { hasData: boolean }) {
 								<TableRow>
 									<TableCell
 										colSpan={6}
-										className="h-32 text-center text-zinc-500 text-xs"
+										className="h-32 text-center text-muted-foreground text-xs"
 									>
 										No customer records found.
 									</TableCell>
@@ -714,18 +724,18 @@ export function SegmentsHealthTab({ hasData }: { hasData: boolean }) {
 								paginatedCustomers.map((customer: CustomerHealthEntry) => (
 									<TableRow
 										key={getCustomerRowKey(customer)}
-										className="border-b-[0.5px] border-zinc-900 hover:bg-zinc-900/30"
+										className="border-b-[0.5px] border-border hover:bg-muted/30"
 									>
 										<TableCell className="py-3 pl-4">
-											<div className="font-semibold text-xs text-zinc-200">
+											<div className="font-semibold text-xs text-foreground">
 												{customer.customerName ?? "Valued Customer"}
 											</div>
-											<div className="text-[10px] text-zinc-500 font-mono mt-0.5">
+											<div className="text-[10px] text-muted-foreground font-mono mt-0.5">
 												{customer.customerMobile ?? "—"}
 											</div>
 										</TableCell>
 										<TableCell className="py-3 text-center">
-											<Badge className="bg-slate-500/10 text-slate-500 hover:bg-slate-500/10 border-none text-[10px] rounded-full px-2 py-0.5">
+											<Badge className="bg-gray-500/10 text-gray-600 dark:text-gray-400 hover:bg-gray-500/10 border-none text-[10px] rounded-full px-2 py-0.5">
 												{(
 													customer as CustomerHealthEntry & {
 														customerType?: string;
@@ -739,7 +749,7 @@ export function SegmentsHealthTab({ hasData }: { hasData: boolean }) {
 										<TableCell className="py-3 text-center">
 											{getSegmentBadge(customer.segment ?? "Regular")}
 										</TableCell>
-										<TableCell className="font-mono text-xs py-3 text-right tabular-nums text-zinc-400">
+										<TableCell className="font-mono text-xs py-3 text-right tabular-nums text-muted-foreground">
 											{(customer.lastPurchaseDays ?? 0) === 0
 												? "Today"
 												: (customer.lastPurchaseDays ?? 0) === 1
@@ -759,7 +769,7 @@ export function SegmentsHealthTab({ hasData }: { hasData: boolean }) {
 																		String(customer.customerMobile ?? ""),
 																	)
 																}
-																className="p-1 rounded hover:bg-white/10 text-zinc-500 hover:text-zinc-200 transition"
+																className="p-1 rounded hover:bg-foreground/10 text-muted-foreground hover:text-foreground transition"
 															>
 																<CheckCircle className="size-3.5" />
 															</button>
@@ -800,8 +810,8 @@ export function SegmentsHealthTab({ hasData }: { hasData: boolean }) {
 				</div>
 
 				{/* Pagination Controls */}
-				<div className="flex items-center justify-between px-6 py-4 border-t border-zinc-900 bg-zinc-950/20">
-					<div className="flex items-center gap-2 text-xs text-zinc-500 font-mono">
+				<div className="flex items-center justify-between px-6 py-4 border-t border-border bg-card/60">
+					<div className="flex items-center gap-2 text-xs text-muted-foreground font-mono">
 						<span>Rows per page:</span>
 						<Select
 							value={String(pageSize)}
@@ -810,10 +820,10 @@ export function SegmentsHealthTab({ hasData }: { hasData: boolean }) {
 								setCurrentPage(1);
 							}}
 						>
-							<SelectTrigger className="w-[70px] h-8 bg-zinc-950 border-zinc-800 text-xs rounded-lg text-zinc-200 focus:ring-0">
+							<SelectTrigger className="w-[70px] h-8 text-xs rounded-lg focus:ring-0">
 								<SelectValue />
 							</SelectTrigger>
-							<SelectContent className="bg-zinc-950 border-zinc-800 text-zinc-200">
+							<SelectContent>
 								<SelectItem value="10">10</SelectItem>
 								<SelectItem value="15">15</SelectItem>
 								<SelectItem value="20">20</SelectItem>
@@ -836,11 +846,11 @@ export function SegmentsHealthTab({ hasData }: { hasData: boolean }) {
 							size="sm"
 							onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
 							disabled={currentPage === 1}
-							className="h-8 w-8 p-0 bg-zinc-950 border-zinc-800 rounded-lg text-zinc-400 hover:text-zinc-200 disabled:opacity-50"
+							className="h-8 w-8 p-0 bg-card border-border rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-50"
 						>
 							<ChevronLeft className="size-4" />
 						</Button>
-						<span className="text-xs text-zinc-400 font-mono">
+						<span className="text-xs text-muted-foreground font-mono">
 							Page {currentPage} of {totalPages}
 						</span>
 						<Button
@@ -848,7 +858,7 @@ export function SegmentsHealthTab({ hasData }: { hasData: boolean }) {
 							size="sm"
 							onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
 							disabled={currentPage === totalPages}
-							className="h-8 w-8 p-0 bg-zinc-950 border-zinc-800 rounded-lg text-zinc-400 hover:text-zinc-200 disabled:opacity-50"
+							className="h-8 w-8 p-0 bg-card border-border rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-50"
 						>
 							<ChevronRight className="size-4" />
 						</Button>

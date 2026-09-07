@@ -1,6 +1,14 @@
 "use client";
 
-import { Bot, Loader2, RotateCcw, Send, Sparkles, X } from "lucide-react";
+import {
+	Bot,
+	Download,
+	Loader2,
+	RotateCcw,
+	Send,
+	Sparkles,
+	X,
+} from "lucide-react";
 import { useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -14,12 +22,21 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { MarkdownLite } from "./markdown-lite";
+
+interface ChatReportLink {
+	id: string;
+	filename: string;
+	format: "xlsx" | "pdf";
+	url: string;
+}
 
 interface ChatEntry {
 	id: string;
 	role: "user" | "assistant";
 	content: string;
 	isError?: boolean;
+	reports?: ChatReportLink[];
 }
 
 function newId(): string {
@@ -67,7 +84,12 @@ export function ChatWidget() {
 			if (res.ok && json.success) {
 				setMessages((prev) => [
 					...prev,
-					{ id: newId(), role: "assistant", content: json.answer },
+					{
+						id: newId(),
+						role: "assistant",
+						content: json.answer,
+						reports: Array.isArray(json.reports) ? json.reports : undefined,
+					},
 				]);
 			} else {
 				setMessages((prev) => [
@@ -152,7 +174,25 @@ export function ChatWidget() {
 												: "bg-muted text-foreground",
 									)}
 								>
-									{m.content}
+									{m.role === "assistant" && !m.isError ? (
+										<MarkdownLite content={m.content} />
+									) : (
+										m.content
+									)}
+									{m.reports && m.reports.length > 0 && (
+										<div className="mt-2 flex flex-col gap-1.5">
+											{m.reports.map((r) => (
+												<a
+													key={r.id}
+													href={r.url}
+													className="flex w-fit items-center gap-1.5 rounded-md border bg-background px-2 py-1 text-[11px] font-medium text-foreground hover:bg-accent"
+												>
+													<Download className="size-3" />
+													{r.filename}
+												</a>
+											))}
+										</div>
+									)}
 								</div>
 							))}
 							{loading && (

@@ -110,6 +110,14 @@ export async function getCustomerIntelligence(
 	const totalCustomers = n(current[0]?.total_customers);
 	const previousCustomers = n(previous[0]?.total_customers);
 	const newCustomers = n(current[0]?.new_customers);
+	// Metric-naming note (Phase 6 audit): this "repeat customers" is
+	// (total customers in period) − (customers whose first-ever purchase
+	// falls in this period). retention.service.ts computes a differently
+	// defined "Repeat Customers"/"Repeat Purchase Rate" — customers with
+	// >1 order within the period. Both are legitimate but distinct
+	// definitions; they are shown under distinct UI labels ("Repeat
+	// Customers" here vs. "Repeat Purchase Rate" on retention pages) and
+	// must never be silently swapped for one another.
 	const repeatCustomers = Math.max(totalCustomers - newCustomers, 0);
 
 	return {

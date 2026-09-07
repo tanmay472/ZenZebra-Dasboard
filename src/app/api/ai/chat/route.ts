@@ -83,6 +83,7 @@ export async function POST(req: NextRequest) {
 			success: true,
 			answer: result.answer,
 			toolCalls: result.toolCalls,
+			reports: result.reports,
 		});
 	} catch (error: any) {
 		// Never leak the raw error (may contain provider-internal detail) —

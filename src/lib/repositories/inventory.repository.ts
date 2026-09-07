@@ -1,5 +1,14 @@
 import { sql } from "../db";
 
+// Low-stock threshold: units on hand at or below this are "Low Stock",
+// above it is "Healthy Stock". Phase 6 audit: no documented Odoo/business
+// config source for this figure exists yet — it is an internally-used
+// operational cutoff, not a value derived from real inventory data, so it
+// is named and centralized here rather than left as an inline literal.
+// Treat this as a business-configurable constant to revisit if the
+// business defines a per-SKU or per-store reorder point instead.
+const LOW_STOCK_THRESHOLD_UNITS = 10;
+
 export interface InventoryOverviewMetrics {
 	totalItemsCount: number;
 	totalSohQty: number;
@@ -88,8 +97,8 @@ export async function getExecutiveInventoryMetrics(filters?: {
 			COALESCE(SUM(fi.quantity), 0) AS total_soh,
 			COALESCE(SUM(fi.quantity * p.list_price), 0) AS total_val_mrp,
 			COALESCE(SUM(fi.quantity * p.cost_price), 0) AS total_val_cost,
-			COUNT(DISTINCT CASE WHEN fi.quantity > 10 THEN p.id END) AS healthy_count,
-			COUNT(DISTINCT CASE WHEN fi.quantity > 0 AND fi.quantity <= 10 THEN p.id END) AS low_count,
+			COUNT(DISTINCT CASE WHEN fi.quantity > ${LOW_STOCK_THRESHOLD_UNITS} THEN p.id END) AS healthy_count,
+			COUNT(DISTINCT CASE WHEN fi.quantity > 0 AND fi.quantity <= ${LOW_STOCK_THRESHOLD_UNITS} THEN p.id END) AS low_count,
 			COUNT(DISTINCT CASE WHEN fi.quantity <= 0 OR fi.quantity IS NULL THEN p.id END) AS out_count,
 			MAX(p.updated_at)::text AS max_updated
 		FROM dim_products p

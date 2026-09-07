@@ -24,6 +24,7 @@ describe("getCrmPipelineSummary — no-fabrication guarantees", () => {
 		statsRows = [];
 		stageRows = [];
 		callIndex = 0;
+		vi.clearAllMocks();
 	});
 
 	it("returns winRate: null (not a fabricated 0%) when there are zero real leads", async () => {
@@ -49,5 +50,46 @@ describe("getCrmPipelineSummary — no-fabrication guarantees", () => {
 		const summary = await getCrmPipelineSummary();
 		expect(summary.totalLeads).toBe(4);
 		expect(summary.winRate).toBe(25);
+	});
+
+	it("passes the requested store into both queries instead of ignoring it (Phase 6 fix: this previously always queried unfiltered crm_leads regardless of the selected store)", async () => {
+		statsRows = [
+			{
+				totalPipelineValue: 10000,
+				totalLeads: 1,
+				avgDealSize: 10000,
+				winRate: 100,
+			},
+		];
+		stageRows = [{ stage: "Closed Won", count: 1, value: 10000 }];
+
+		const { sql } = (await import("@/lib/db")) as unknown as {
+			sql: { mock: { calls: unknown[][] } };
+		};
+
+		await getCrmPipelineSummary({ store: "Klj store" });
+
+		expect(sql.mock.calls.length).toBe(2);
+		for (const call of sql.mock.calls) {
+			expect(call).toContain("Klj store");
+		}
+	});
+
+	it("treats store: 'ALL' the same as no store filter (passes null, not the literal string 'ALL')", async () => {
+		statsRows = [
+			{ totalPipelineValue: 0, totalLeads: 0, avgDealSize: 0, winRate: 0 },
+		];
+		stageRows = [];
+
+		const { sql } = (await import("@/lib/db")) as unknown as {
+			sql: { mock: { calls: unknown[][] } };
+		};
+
+		await getCrmPipelineSummary({ store: "ALL" });
+
+		for (const call of sql.mock.calls) {
+			expect(call).not.toContain("ALL");
+			expect(call).toContain(null);
+		}
 	});
 });

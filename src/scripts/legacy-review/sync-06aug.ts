@@ -67,7 +67,7 @@ async function main() {
 	console.log(`     ✅ Orders processed: ${salesCount}\n`);
 
 	console.log("[4/4] Syncing Inventory Levels (stock.quant)...");
-	const invCount = await syncInventory(client);
+	const invCount = await syncInventory(client, null);
 	console.log(`     ✅ Stock quants upserted: ${invCount}\n`);
 
 	// -----------------------------------------------------------------------

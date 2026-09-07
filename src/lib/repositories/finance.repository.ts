@@ -85,6 +85,15 @@ export async function getFinanceSummary(filters?: {
 		// No purchase-order data at all is NOT the same as zero cost — a
 		// "100% margin" here would falsely claim zero cost of goods rather
 		// than "no cost data recorded yet" (data-truth remediation).
+		//
+		// Metric-naming note (Phase 6 audit): this is "revenue minus recorded
+		// purchase-order spend" — a cash-flow-style contribution figure, NOT
+		// per-SKU cost-of-goods-sold margin. It is surfaced on the finance
+		// page as "Gross Contribution Margin" specifically to distinguish it
+		// from any future/other page that might compute a COGS-based gross
+		// margin from dim_products.cost_price. Do not reuse the bare label
+		// "Gross Margin" for a differently-computed figure elsewhere without
+		// giving it its own distinct name.
 		const hasPurchaseData = totalPurchaseOrders > 0;
 		const grossMargin = totalRevenue - totalPurchaseSpend;
 		const grossMarginPercent =

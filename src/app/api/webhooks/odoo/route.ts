@@ -32,6 +32,22 @@ export async function POST(req: NextRequest) {
 		);
 	}
 
+	// Odoo's native ir.actions.server webhook (state="webhook") always sends
+	// the triggering record's id/model as "_id"/"_model" (its own reserved
+	// metadata keys — see the field's own help text: "The id and model of
+	// the record are always sent as '_id' and '_model'"), never as bare
+	// "id"/"model" — Odoo has no way to add a literal/static "model" field
+	// via webhook_field_ids since "model" isn't a real field on pos.order.
+	// Without this fallback, every genuine Odoo-originated delivery would
+	// be rejected here (Phase 7A finding). Manually-constructed test
+	// payloads that already send bare id/model are unaffected.
+	if (body.id === undefined && body._id !== undefined) {
+		body.id = body._id;
+	}
+	if (body.model === undefined && body._model !== undefined) {
+		body.model = body._model;
+	}
+
 	if (!body.id || !body.model) {
 		return NextResponse.json(
 			{ error: "Missing required fields: id and model" },

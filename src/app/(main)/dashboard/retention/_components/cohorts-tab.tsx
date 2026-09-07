@@ -186,7 +186,7 @@ export function CohortsTab({ hasData }: { hasData: boolean }) {
 			return (
 				<TableCell
 					key={m?.monthIndex ?? Math.random()}
-					className="text-center text-zinc-700 font-mono text-[11px] p-2 md:p-3 border-r border-zinc-900 bg-zinc-900/20"
+					className="text-center text-muted-foreground font-mono text-[11px] p-2 md:p-3 border-r border-border bg-muted/20"
 				>
 					-
 				</TableCell>
@@ -203,19 +203,19 @@ export function CohortsTab({ hasData }: { hasData: boolean }) {
 
 			// Same thresholds as before (100% Dark Green, 70% Green, 50% Yellow, 20% Red) — now rendered as a pill badge
 			if (pct >= 80) {
-				pillClass = "bg-emerald-500 text-white";
+				pillClass = "bg-emerald-500 text-foreground";
 			} else if (pct >= 60) {
 				pillClass = "bg-emerald-400 text-emerald-950";
 			} else if (pct >= 40) {
 				pillClass = "bg-amber-400 text-amber-950";
 			} else {
-				pillClass = "bg-rose-500 text-white";
+				pillClass = "bg-rose-500 text-foreground";
 			}
 
 			return (
 				<TableCell
 					key={m.monthIndex}
-					className="text-center font-mono text-[11px] p-2 md:p-3 border-r border-zinc-900"
+					className="text-center font-mono text-[11px] p-2 md:p-3 border-r border-border"
 				>
 					<span
 						className={`inline-block min-w-[52px] px-2.5 py-1 rounded-full font-bold ${pillClass}`}
@@ -258,11 +258,11 @@ export function CohortsTab({ hasData }: { hasData: boolean }) {
 		return (
 			<TableCell
 				key={m.monthIndex}
-				className="text-center font-mono text-[11px] p-2 md:p-3 border-r border-zinc-900 transition-all duration-150 hover:brightness-110"
+				className="text-center font-mono text-[11px] p-2 md:p-3 border-r border-border transition-all duration-150 hover:brightness-110"
 				style={textStyle}
 			>
 				<span className="block leading-none">{valueText}</span>
-				<span className="block text-[9px] text-zinc-500/80 mt-0.5 font-sans">
+				<span className="block text-[9px] text-muted-foreground/80 mt-0.5 font-sans">
 					({m.activeCustomers} active)
 				</span>
 			</TableCell>
@@ -272,15 +272,15 @@ export function CohortsTab({ hasData }: { hasData: boolean }) {
 	return (
 		<div className="flex flex-col gap-6">
 			{/* Cohort Heatmap Card */}
-			<Card className="overflow-hidden border-[0.5px] border-zinc-800 bg-zinc-950 rounded-[12px] shadow-none">
-				<CardHeader className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between pb-4 border-b border-zinc-900">
+			<Card className="overflow-hidden border-[0.5px] border-border bg-card rounded-[12px] shadow-none">
+				<CardHeader className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between pb-4 border-b border-border">
 					<div className="flex flex-col gap-1">
-						<CardTitle className="text-lg text-zinc-100 font-mono flex items-center gap-2">
+						<CardTitle className="text-lg text-foreground font-mono flex items-center gap-2">
 							Retention Cohort Analysis
 							<TooltipProvider>
 								<Tooltip>
 									<TooltipTrigger asChild>
-										<HelpCircle className="size-4 text-zinc-500 cursor-pointer" />
+										<HelpCircle className="size-4 text-muted-foreground cursor-pointer" />
 									</TooltipTrigger>
 									<TooltipContent className="max-w-xs p-3 space-y-1.5 text-xs">
 										<p>
@@ -295,7 +295,7 @@ export function CohortsTab({ hasData }: { hasData: boolean }) {
 								</Tooltip>
 							</TooltipProvider>
 						</CardTitle>
-						<CardDescription className="text-zinc-500">
+						<CardDescription className="text-muted-foreground">
 							Retail cohort behavior across the active period, with retention,
 							revenue, AOV, and bill-cut views.
 						</CardDescription>
@@ -304,15 +304,15 @@ export function CohortsTab({ hasData }: { hasData: boolean }) {
 					{/* Custom Local Cohort Filters */}
 					<div className="flex flex-wrap items-center gap-2">
 						<div className="flex items-center gap-2">
-							<Filter className="size-3.5 text-zinc-500" />
-							<span className="text-[10px] uppercase font-bold text-zinc-500">
+							<Filter className="size-3.5 text-muted-foreground" />
+							<span className="text-[10px] uppercase font-bold text-muted-foreground">
 								Type
 							</span>
 							<Select value={customerType} onValueChange={setCustomerType}>
-								<SelectTrigger className="w-[100px] h-8 text-xs bg-zinc-900 border-zinc-800 text-zinc-200 rounded-lg">
+								<SelectTrigger className="w-[100px] h-8 text-xs bg-muted border-border text-foreground rounded-lg">
 									<SelectValue placeholder="All" />
 								</SelectTrigger>
-								<SelectContent className="bg-zinc-950 border-zinc-800 text-zinc-200">
+								<SelectContent>
 									<SelectItem value="all">All</SelectItem>
 									<SelectItem value="new">New Customers</SelectItem>
 									<SelectItem value="existing">Existing Customers</SelectItem>
@@ -321,17 +321,17 @@ export function CohortsTab({ hasData }: { hasData: boolean }) {
 						</div>
 
 						<div className="flex items-center gap-2">
-							<span className="text-[10px] uppercase font-bold text-zinc-500">
+							<span className="text-[10px] uppercase font-bold text-muted-foreground">
 								Bill Cut
 							</span>
 							<Select
 								value={billRangeFilter}
 								onValueChange={setBillRangeFilter}
 							>
-								<SelectTrigger className="w-[110px] h-8 text-xs bg-zinc-900 border-zinc-800 text-zinc-200 rounded-lg">
+								<SelectTrigger className="w-[110px] h-8 text-xs bg-muted border-border text-foreground rounded-lg">
 									<SelectValue placeholder="All" />
 								</SelectTrigger>
-								<SelectContent className="bg-zinc-950 border-zinc-800 text-zinc-200">
+								<SelectContent>
 									<SelectItem value="all">All Cuts</SelectItem>
 									<SelectItem value="0-500">0-500</SelectItem>
 									<SelectItem value="500-1000">500-1000</SelectItem>
@@ -350,28 +350,28 @@ export function CohortsTab({ hasData }: { hasData: boolean }) {
 						value={selectedMetric}
 						onValueChange={(val) => setSelectedMetric(val as CohortMetricType)}
 					>
-						<TabsList className="bg-zinc-900 border border-zinc-800 rounded-lg p-1 h-auto">
+						<TabsList className="bg-muted border border-border rounded-lg p-1 h-auto">
 							<TabsTrigger
 								value="retention"
-								className="text-xs px-3 py-1.5 rounded-md data-[state=active]:bg-zinc-100 data-[state=active]:text-zinc-900"
+								className="text-xs px-3 py-1.5 rounded-md data-[state=active]:bg-background data-[state=active]:text-foreground"
 							>
 								Retention
 							</TabsTrigger>
 							<TabsTrigger
 								value="revenue"
-								className="text-xs px-3 py-1.5 rounded-md data-[state=active]:bg-zinc-100 data-[state=active]:text-zinc-900"
+								className="text-xs px-3 py-1.5 rounded-md data-[state=active]:bg-background data-[state=active]:text-foreground"
 							>
 								Revenue
 							</TabsTrigger>
 							<TabsTrigger
 								value="aov"
-								className="text-xs px-3 py-1.5 rounded-md data-[state=active]:bg-zinc-100 data-[state=active]:text-zinc-900"
+								className="text-xs px-3 py-1.5 rounded-md data-[state=active]:bg-background data-[state=active]:text-foreground"
 							>
 								AOV
 							</TabsTrigger>
 							<TabsTrigger
 								value="billCuts"
-								className="text-xs px-3 py-1.5 rounded-md data-[state=active]:bg-zinc-100 data-[state=active]:text-zinc-900"
+								className="text-xs px-3 py-1.5 rounded-md data-[state=active]:bg-background data-[state=active]:text-foreground"
 							>
 								Bill cut
 							</TabsTrigger>
@@ -381,32 +381,32 @@ export function CohortsTab({ hasData }: { hasData: boolean }) {
 
 				{/* Summary stat tiles */}
 				<div className="grid grid-cols-2 lg:grid-cols-4 gap-3 px-4 pt-4">
-					<div className="rounded-[10px] border border-zinc-800 bg-zinc-900/60 p-3">
-						<div className="text-[11px] text-zinc-500 font-mono">
+					<div className="rounded-[10px] border border-border bg-muted/60 p-3">
+						<div className="text-[11px] text-muted-foreground font-mono">
 							Total customers
 						</div>
-						<div className="text-xl font-semibold text-white font-mono mt-1">
+						<div className="text-xl font-semibold text-foreground font-mono mt-1">
 							{summaryStats.totalCustomers.toLocaleString()}
 						</div>
 					</div>
-					<div className="rounded-[10px] border border-zinc-800 bg-zinc-900/60 p-3">
-						<div className="text-[11px] text-zinc-500 font-mono">
+					<div className="rounded-[10px] border border-border bg-muted/60 p-3">
+						<div className="text-[11px] text-muted-foreground font-mono">
 							Avg M1 retention
 						</div>
 						<div className="text-xl font-semibold text-amber-400 font-mono mt-1">
 							{summaryStats.avgM1Retention}%
 						</div>
 					</div>
-					<div className="rounded-[10px] border border-zinc-800 bg-zinc-900/60 p-3">
-						<div className="text-[11px] text-zinc-500 font-mono">
+					<div className="rounded-[10px] border border-border bg-muted/60 p-3">
+						<div className="text-[11px] text-muted-foreground font-mono">
 							Strongest cohort
 						</div>
 						<div className="text-xl font-semibold text-amber-400 font-mono mt-1">
 							{summaryStats.strongestLabel}
 						</div>
 					</div>
-					<div className="rounded-[10px] border border-zinc-800 bg-zinc-900/60 p-3">
-						<div className="text-[11px] text-zinc-500 font-mono">
+					<div className="rounded-[10px] border border-border bg-muted/60 p-3">
+						<div className="text-[11px] text-muted-foreground font-mono">
 							Weakest cohort
 						</div>
 						<div className="text-xl font-semibold text-rose-400 font-mono mt-1">
@@ -416,7 +416,7 @@ export function CohortsTab({ hasData }: { hasData: boolean }) {
 				</div>
 
 				{selectedMetric === "retention" && (
-					<div className="px-4 pt-4 pb-2 text-[11px] text-zinc-500">
+					<div className="px-4 pt-4 pb-2 text-[11px] text-muted-foreground">
 						<span className="mr-3 inline-flex items-center gap-1">
 							<span className="h-2.5 w-2.5 rounded-full bg-emerald-500" /> 80%+
 						</span>
@@ -437,17 +437,17 @@ export function CohortsTab({ hasData }: { hasData: boolean }) {
 					<div className="overflow-x-auto w-full">
 						<Table className="min-w-[800px] border-collapse">
 							<TableHeader>
-								<TableRow className="border-b border-zinc-900 hover:bg-transparent">
-									<TableHead className="font-semibold text-xs py-3 pl-4 border-r border-zinc-900 text-zinc-500">
+								<TableRow className="border-b border-border hover:bg-transparent">
+									<TableHead className="font-semibold text-xs py-3 pl-4 border-r border-border text-muted-foreground">
 										Cohort
 									</TableHead>
-									<TableHead className="font-semibold text-xs py-3 pl-4 text-right border-r border-zinc-900 text-zinc-500">
+									<TableHead className="font-semibold text-xs py-3 pl-4 text-right border-r border-border text-muted-foreground">
 										Size
 									</TableHead>
 									{["M0", "M1", "M2", "M3", "M4", "M5"].map((label) => (
 										<TableHead
 											key={label}
-											className="font-semibold text-xs py-3 text-center border-r border-zinc-900 text-zinc-500"
+											className="font-semibold text-xs py-3 text-center border-r border-border text-muted-foreground"
 										>
 											{label}
 										</TableHead>
@@ -459,7 +459,7 @@ export function CohortsTab({ hasData }: { hasData: boolean }) {
 									<TableRow className="hover:bg-transparent">
 										<TableCell
 											colSpan={8}
-											className="h-32 text-center text-zinc-500"
+											className="h-32 text-center text-muted-foreground"
 										>
 											No cohort data matches filters in selected period.
 										</TableCell>
@@ -468,12 +468,12 @@ export function CohortsTab({ hasData }: { hasData: boolean }) {
 									data.map((cohort: any) => (
 										<TableRow
 											key={cohort.cohortMonth}
-											className="border-b border-zinc-900 hover:bg-zinc-900/40"
+											className="border-b border-border hover:bg-muted/40"
 										>
-											<TableCell className="font-semibold py-3 pl-4 text-xs whitespace-nowrap border-r border-zinc-900 text-zinc-200">
+											<TableCell className="font-semibold py-3 pl-4 text-xs whitespace-nowrap border-r border-border text-foreground">
 												{cohort.cohortLabel}
 											</TableCell>
-											<TableCell className="font-mono text-xs py-3 pl-4 text-right tabular-nums pr-6 border-r border-zinc-900 text-zinc-400">
+											<TableCell className="font-mono text-xs py-3 pl-4 text-right tabular-nums pr-6 border-r border-border text-muted-foreground">
 												{cohort.cohortCustomers.toLocaleString()}
 											</TableCell>
 											{Array.from({ length: 6 }).map((_, idx) => {
@@ -496,12 +496,12 @@ export function CohortsTab({ hasData }: { hasData: boolean }) {
 
 			{/* Bill Cuts Summary Analysis Table */}
 			<div className="grid gap-6 grid-cols-1 md:grid-cols-3">
-				<Card className="md:col-span-2 overflow-hidden border-[0.5px] border-zinc-800 bg-zinc-950 rounded-[12px] shadow-none">
-					<CardHeader className="pb-3 border-b border-zinc-900">
-						<CardTitle className="text-sm font-bold text-zinc-100 font-mono">
+				<Card className="md:col-span-2 overflow-hidden border-[0.5px] border-border bg-card rounded-[12px] shadow-none">
+					<CardHeader className="pb-3 border-b border-border">
+						<CardTitle className="text-sm font-bold text-foreground font-mono">
 							Cohort By Bill Cut
 						</CardTitle>
-						<CardDescription className="text-xs text-zinc-500">
+						<CardDescription className="text-xs text-muted-foreground">
 							Repeat purchase rate grouped by initial bill size showing
 							retention tiering.
 						</CardDescription>
@@ -509,17 +509,17 @@ export function CohortsTab({ hasData }: { hasData: boolean }) {
 					<CardContent className="p-0">
 						<Table>
 							<TableHeader>
-								<TableRow className="border-b border-zinc-900 hover:bg-transparent">
-									<TableHead className="font-semibold text-xs pl-4 text-zinc-500">
+								<TableRow className="border-b border-border hover:bg-transparent">
+									<TableHead className="font-semibold text-xs pl-4 text-muted-foreground">
 										Bill Range (₹)
 									</TableHead>
-									<TableHead className="font-semibold text-xs text-right text-zinc-500">
+									<TableHead className="font-semibold text-xs text-right text-muted-foreground">
 										Total Customers
 									</TableHead>
-									<TableHead className="font-semibold text-xs text-right text-zinc-500">
+									<TableHead className="font-semibold text-xs text-right text-muted-foreground">
 										Repeat Customers
 									</TableHead>
-									<TableHead className="font-semibold text-xs text-right pr-4 text-zinc-500">
+									<TableHead className="font-semibold text-xs text-right pr-4 text-muted-foreground">
 										Retention Rate
 									</TableHead>
 								</TableRow>
@@ -529,7 +529,7 @@ export function CohortsTab({ hasData }: { hasData: boolean }) {
 									<TableRow className="hover:bg-transparent">
 										<TableCell
 											colSpan={4}
-											className="h-24 text-center text-xs text-zinc-500"
+											className="h-24 text-center text-xs text-muted-foreground"
 										>
 											No billing transaction records found.
 										</TableCell>
@@ -538,15 +538,15 @@ export function CohortsTab({ hasData }: { hasData: boolean }) {
 									billCuts.map((cut: any) => (
 										<TableRow
 											key={cut.billRange}
-											className="border-b border-zinc-900 hover:bg-zinc-900/40"
+											className="border-b border-border hover:bg-muted/40"
 										>
-											<TableCell className="font-semibold text-xs pl-4 text-zinc-200">
+											<TableCell className="font-semibold text-xs pl-4 text-foreground">
 												{cut.billRange}
 											</TableCell>
-											<TableCell className="font-mono text-xs text-right tabular-nums text-zinc-300">
+											<TableCell className="font-mono text-xs text-right tabular-nums text-foreground/80">
 												{cut.totalCustomers.toLocaleString()}
 											</TableCell>
-											<TableCell className="font-mono text-xs text-right tabular-nums text-zinc-300">
+											<TableCell className="font-mono text-xs text-right tabular-nums text-foreground/80">
 												{cut.repeatCustomers.toLocaleString()}
 											</TableCell>
 											<TableCell className="font-mono text-xs text-right pr-4 tabular-nums">
@@ -570,12 +570,12 @@ export function CohortsTab({ hasData }: { hasData: boolean }) {
 					</CardContent>
 				</Card>
 
-				<Card className="p-5 flex flex-col justify-between md:col-span-1 border-[0.5px] border-zinc-800 bg-zinc-950 rounded-[12px] shadow-none">
+				<Card className="p-5 flex flex-col justify-between md:col-span-1 border-[0.5px] border-border bg-card rounded-[12px] shadow-none">
 					<div>
-						<h3 className="text-sm font-bold mb-2 text-zinc-100 font-mono">
+						<h3 className="text-sm font-bold mb-2 text-foreground font-mono">
 							Bill Range Insights
 						</h3>
-						<p className="text-xs text-zinc-500 leading-relaxed">
+						<p className="text-xs text-muted-foreground leading-relaxed">
 							Analyzing cohorts grouped by **Bill Cut** helps you identify your
 							most valuable customer entries. Typically, customers starting with
 							larger invoice ranges (&gt; ₹2000) show higher subsequent trust,

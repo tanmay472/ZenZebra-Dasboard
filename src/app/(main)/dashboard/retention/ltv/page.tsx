@@ -278,7 +278,7 @@ export default function LTVPage() {
 											/>
 											<Bar
 												dataKey="count"
-												fill="#fedb17da"
+												fill="var(--chart-1)"
 												radius={[4, 4, 0, 0]}
 												maxBarSize={60}
 											/>

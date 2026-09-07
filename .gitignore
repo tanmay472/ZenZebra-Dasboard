@@ -63,3 +63,9 @@ next-env.d.ts
 /run-migrations.mjs
 /setup-db.mjs
 /test-connection.mjs
+
+# AI-generated report files (xlsx/pdf) — regenerated on demand, not source
+/data/ai-reports/
+legacy-root-scripts/reports/
+legacy-root-scripts/*.xlsx
+legacy-root-scripts/_*.json

@@ -56,11 +56,14 @@ export default async function proxy(req: NextRequest) {
 	// Check for session cookie
 	const sessionToken = req.cookies.get("zz_session")?.value;
 
-	// In development mode or when auth bypass is enabled, allow access
-	if (
-		process.env.NODE_ENV === "development" ||
-		process.env.DISABLE_AUTH === "true"
-	) {
+	// Auth bypass requires an EXPLICIT opt-in only — never inferred from
+	// NODE_ENV. The prior check also bypassed auth whenever
+	// NODE_ENV === "development", which meant any misconfigured deployment
+	// (NODE_ENV unset, a staging box cloned from a dev .env, `next start`
+	// without setting it) would silently and fully disable authentication
+	// with no warning. DISABLE_AUTH=true is still available for local
+	// development convenience, but it must be set on purpose.
+	if (process.env.DISABLE_AUTH === "true") {
 		return NextResponse.next();
 	}
 

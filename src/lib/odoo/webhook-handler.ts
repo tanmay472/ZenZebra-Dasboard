@@ -6,6 +6,11 @@ export interface WebhookPayload {
 	model: string;
 	event_id?: string;
 	write_date?: string;
+	// Odoo's native ir.actions.server webhook always includes these two
+	// (its own reserved metadata keys); the route normalizes them into
+	// id/model when those are absent. See route.ts for the full rationale.
+	_id?: number;
+	_model?: string;
 	[key: string]: any;
 }
 

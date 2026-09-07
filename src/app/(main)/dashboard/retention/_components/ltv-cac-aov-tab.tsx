@@ -289,21 +289,23 @@ export function LtvCacAovTab() {
 	};
 
 	return (
-		<div className="flex flex-col gap-4 text-zinc-100 font-sans">
+		<div className="flex flex-col gap-4 text-foreground font-sans">
 			{/* Dense bento grid: KPI tiles + ratio hero + charts + breakdown, packed masonry-style */}
 			<div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-4 [&>*]:mb-4 [&>*]:break-inside-avoid">
 				{/* Customer LTV */}
-				<Card className="border-[0.5px] border-zinc-800 bg-zinc-950 rounded-[12px] p-5 shadow-none flex flex-col gap-1">
-					<span className="text-xs text-zinc-500 font-mono">Customer LTV</span>
-					<span className="text-3xl font-semibold text-white font-mono mt-1">
+				<Card className="border-[0.5px] border-border bg-card rounded-[12px] p-5 shadow-none flex flex-col gap-1">
+					<span className="text-xs text-muted-foreground font-mono">
+						Customer LTV
+					</span>
+					<span className="text-3xl font-semibold text-foreground font-mono mt-1">
 						{formatCurrency(Math.round(ltv), { noDecimals: true })}
 					</span>
 				</Card>
 
 				{/* CAC */}
-				<Card className="border-[0.5px] border-zinc-800 bg-zinc-950 rounded-[12px] p-5 shadow-none flex flex-col gap-1">
-					<span className="text-xs text-zinc-500 font-mono">CAC</span>
-					<span className="text-3xl font-semibold text-white font-mono mt-1">
+				<Card className="border-[0.5px] border-border bg-card rounded-[12px] p-5 shadow-none flex flex-col gap-1">
+					<span className="text-xs text-muted-foreground font-mono">CAC</span>
+					<span className="text-3xl font-semibold text-foreground font-mono mt-1">
 						{hasSpendData
 							? formatCurrency(Math.round(cac as number), { noDecimals: true })
 							: "N/A"}
@@ -311,19 +313,21 @@ export function LtvCacAovTab() {
 				</Card>
 
 				{/* Average AOV */}
-				<Card className="border-[0.5px] border-zinc-800 bg-zinc-950 rounded-[12px] p-5 shadow-none flex flex-col gap-1">
-					<span className="text-xs text-zinc-500 font-mono">Average AOV</span>
-					<span className="text-3xl font-semibold text-white font-mono mt-1">
+				<Card className="border-[0.5px] border-border bg-card rounded-[12px] p-5 shadow-none flex flex-col gap-1">
+					<span className="text-xs text-muted-foreground font-mono">
+						Average AOV
+					</span>
+					<span className="text-3xl font-semibold text-foreground font-mono mt-1">
 						{formatCurrency(Math.round(aov), { noDecimals: true })}
 					</span>
 				</Card>
 
 				{/* Net value / customer */}
-				<Card className="border-[0.5px] border-zinc-800 bg-zinc-950 rounded-[12px] p-5 shadow-none flex flex-col gap-1">
-					<span className="text-xs text-zinc-500 font-mono">
+				<Card className="border-[0.5px] border-border bg-card rounded-[12px] p-5 shadow-none flex flex-col gap-1">
+					<span className="text-xs text-muted-foreground font-mono">
 						Net value / customer
 					</span>
-					<span className="text-3xl font-semibold text-white font-mono mt-1">
+					<span className="text-3xl font-semibold text-foreground font-mono mt-1">
 						{netValue === null
 							? "N/A"
 							: formatCurrency(Math.round(netValue), { noDecimals: true })}
@@ -331,17 +335,21 @@ export function LtvCacAovTab() {
 				</Card>
 
 				{/* CAC payback */}
-				<Card className="border-[0.5px] border-zinc-800 bg-zinc-950 rounded-[12px] p-5 shadow-none flex flex-col gap-1">
-					<span className="text-xs text-zinc-500 font-mono">CAC payback</span>
-					<span className="text-3xl font-semibold text-white font-mono mt-1">
+				<Card className="border-[0.5px] border-border bg-card rounded-[12px] p-5 shadow-none flex flex-col gap-1">
+					<span className="text-xs text-muted-foreground font-mono">
+						CAC payback
+					</span>
+					<span className="text-3xl font-semibold text-foreground font-mono mt-1">
 						{payback === null ? "N/A" : `${payback} mo`}
 					</span>
 				</Card>
 
 				{/* AOV expansion */}
-				<Card className="border-[0.5px] border-zinc-800 bg-zinc-950 rounded-[12px] p-5 shadow-none flex flex-col gap-1">
-					<span className="text-xs text-zinc-500 font-mono">AOV expansion</span>
-					<span className="text-3xl font-semibold text-white font-mono mt-1">
+				<Card className="border-[0.5px] border-border bg-card rounded-[12px] p-5 shadow-none flex flex-col gap-1">
+					<span className="text-xs text-muted-foreground font-mono">
+						AOV expansion
+					</span>
+					<span className="text-3xl font-semibold text-foreground font-mono mt-1">
 						{aovExpansion >= 0 ? "+" : ""}
 						{Math.round(aovExpansion)}%
 					</span>
@@ -370,9 +378,9 @@ export function LtvCacAovTab() {
 				</Card>
 
 				{/* Cohort LTV Growth Line Chart */}
-				<Card className="border-[0.5px] border-zinc-800 bg-zinc-950 p-6 rounded-[12px] shadow-none flex flex-col gap-4">
+				<Card className="border-[0.5px] border-border bg-card p-6 rounded-[12px] shadow-none flex flex-col gap-4">
 					<div>
-						<h3 className="text-sm font-medium text-zinc-100 font-mono">
+						<h3 className="text-sm font-medium text-foreground font-mono">
 							Cohort LTV growth
 						</h3>
 					</div>
@@ -384,28 +392,28 @@ export function LtvCacAovTab() {
 							>
 								<CartesianGrid
 									strokeDasharray="3 3"
-									stroke="#27272a"
+									stroke="var(--border)"
 									vertical={false}
 								/>
 								<XAxis
 									dataKey="name"
-									stroke="#71717a"
+									stroke="var(--muted-foreground)"
 									fontSize={11}
 									tickLine={false}
 									axisLine={false}
 								/>
 								<YAxis
-									stroke="#71717a"
+									stroke="var(--muted-foreground)"
 									fontSize={11}
 									tickLine={false}
 									axisLine={false}
 								/>
 								<Tooltip
 									contentStyle={{
-										backgroundColor: "#09090b",
-										borderColor: "#27272a",
+										backgroundColor: "var(--popover)",
+										borderColor: "var(--border)",
 										borderRadius: "8px",
-										color: "#f4f4f5",
+										color: "var(--popover-foreground)",
 										fontSize: "11px",
 									}}
 									formatter={(v) => [`₹${v}`, "LTV"]}
@@ -415,12 +423,13 @@ export function LtvCacAovTab() {
 										key={cohort}
 										type="monotone"
 										dataKey={cohort}
-										stroke={index === 0 ? "#3b82f6" : "#f59e0b"}
+										stroke={index === 0 ? "var(--chart-1)" : "var(--chart-4)"}
 										strokeWidth={2}
+										strokeDasharray={index === 0 ? undefined : "6 3"}
 										dot={{
 											r: 5,
 											strokeWidth: 0,
-											fill: index === 0 ? "#3b82f6" : "#f59e0b",
+											fill: index === 0 ? "var(--chart-1)" : "var(--chart-4)",
 										}}
 										activeDot={{ r: 7 }}
 									/>
@@ -429,13 +438,14 @@ export function LtvCacAovTab() {
 						</ResponsiveContainer>
 					</div>
 					{/* Custom Legend Below Chart */}
-					<div className="flex items-center gap-4 text-xs font-mono text-zinc-400 mt-2">
+					<div className="flex items-center gap-4 text-xs font-mono text-muted-foreground mt-2">
 						{cohortNames.slice(0, 2).map((cohort, index) => (
 							<div key={cohort} className="flex items-center gap-1.5">
 								<span
 									className="size-2 rounded-full"
 									style={{
-										backgroundColor: index === 0 ? "#3b82f6" : "#f59e0b",
+										backgroundColor:
+											index === 0 ? "var(--chart-1)" : "var(--chart-4)",
 									}}
 								/>
 								<span>{cohort}</span>
@@ -445,9 +455,9 @@ export function LtvCacAovTab() {
 				</Card>
 
 				{/* AOV Expansion Bar Chart */}
-				<Card className="border-[0.5px] border-zinc-800 bg-zinc-950 p-6 rounded-[12px] shadow-none flex flex-col gap-4">
+				<Card className="border-[0.5px] border-border bg-card p-6 rounded-[12px] shadow-none flex flex-col gap-4">
 					<div>
-						<h3 className="text-sm font-medium text-zinc-100 font-mono">
+						<h3 className="text-sm font-medium text-foreground font-mono">
 							AOV expansion over time
 						</h3>
 					</div>
@@ -459,35 +469,35 @@ export function LtvCacAovTab() {
 							>
 								<CartesianGrid
 									strokeDasharray="3 3"
-									stroke="#27272a"
+									stroke="var(--border)"
 									vertical={false}
 								/>
 								<XAxis
 									dataKey="name"
-									stroke="#71717a"
+									stroke="var(--muted-foreground)"
 									fontSize={11}
 									tickLine={false}
 									axisLine={false}
 								/>
 								<YAxis
-									stroke="#71717a"
+									stroke="var(--muted-foreground)"
 									fontSize={11}
 									tickLine={false}
 									axisLine={false}
 								/>
 								<Tooltip
 									contentStyle={{
-										backgroundColor: "#09090b",
-										borderColor: "#27272a",
+										backgroundColor: "var(--popover)",
+										borderColor: "var(--border)",
 										borderRadius: "8px",
-										color: "#f4f4f5",
+										color: "var(--popover-foreground)",
 										fontSize: "11px",
 									}}
 									formatter={(v) => [`₹${v}`, "AOV"]}
 								/>
 								<Bar
 									dataKey="aov"
-									fill="#10b981"
+									fill="var(--chart-1)"
 									radius={[4, 4, 0, 0]}
 									barSize={40}
 								/>
@@ -497,16 +507,16 @@ export function LtvCacAovTab() {
 				</Card>
 
 				{/* CAC Payback Breakdown */}
-				<Card className="border-[0.5px] border-zinc-800 bg-zinc-950 p-6 rounded-[12px] shadow-none flex flex-col gap-4">
+				<Card className="border-[0.5px] border-border bg-card p-6 rounded-[12px] shadow-none flex flex-col gap-4">
 					<div>
-						<h3 className="text-sm font-medium text-zinc-100 font-mono">
+						<h3 className="text-sm font-medium text-foreground font-mono">
 							CAC payback breakdown
 						</h3>
 					</div>
-					<div className="border border-zinc-800 rounded-lg overflow-hidden divide-y divide-zinc-800">
-						<div className="flex justify-between items-center p-4 bg-zinc-950/20 text-xs font-mono">
-							<span className="text-zinc-400">CAC</span>
-							<span className="text-zinc-200 font-semibold">
+					<div className="border border-border rounded-lg overflow-hidden divide-y divide-border">
+						<div className="flex justify-between items-center p-4 bg-muted/20 text-xs font-mono">
+							<span className="text-muted-foreground">CAC</span>
+							<span className="text-foreground font-semibold">
 								{hasSpendData
 									? formatCurrency(Math.round(cac as number), {
 											noDecimals: true,
@@ -514,19 +524,19 @@ export function LtvCacAovTab() {
 									: "N/A"}
 							</span>
 						</div>
-						<div className="flex justify-between items-center p-4 bg-zinc-950/20 text-xs font-mono">
-							<span className="text-zinc-400">
+						<div className="flex justify-between items-center p-4 bg-muted/20 text-xs font-mono">
+							<span className="text-muted-foreground">
 								Avg monthly margin / customer
 							</span>
-							<span className="text-zinc-200 font-semibold">
+							<span className="text-foreground font-semibold">
 								{formatCurrency(avgMonthlyMargin, { noDecimals: true })}
 							</span>
 						</div>
-						<div className="flex justify-between items-center p-4 bg-zinc-950/20 text-xs font-mono">
-							<span className="text-zinc-200 font-semibold">
+						<div className="flex justify-between items-center p-4 bg-muted/20 text-xs font-mono">
+							<span className="text-foreground font-semibold">
 								Payback period
 							</span>
-							<span className="text-white font-bold">
+							<span className="text-foreground font-bold">
 								{payback === null ? "N/A" : `${payback} months`}
 							</span>
 						</div>
@@ -535,13 +545,13 @@ export function LtvCacAovTab() {
 			</div>
 
 			{/* Detailed Top Customer Table */}
-			<Card className="overflow-hidden border-[0.5px] border-zinc-800 bg-zinc-950 rounded-[12px] shadow-none flex flex-col">
-				<CardHeader className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between pb-4 border-b border-zinc-900 bg-zinc-950">
+			<Card className="overflow-hidden border-[0.5px] border-border bg-card rounded-[12px] shadow-none flex flex-col">
+				<CardHeader className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between pb-4 border-b border-border bg-card">
 					<div className="flex flex-col gap-1">
-						<CardTitle className="text-lg text-zinc-100 font-mono">
+						<CardTitle className="text-lg text-foreground font-mono">
 							Customer AOV & LTV Table
 						</CardTitle>
-						<CardDescription className="text-zinc-400 text-xs">
+						<CardDescription className="text-muted-foreground text-xs">
 							Individual customer spending habits, lifetime value, and AOV
 							stability tracking.
 						</CardDescription>
@@ -551,7 +561,7 @@ export function LtvCacAovTab() {
 					<div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
 						{/* Customer Type Dropdown */}
 						<div className="flex items-center gap-2">
-							<span className="text-[10px] uppercase font-bold text-zinc-500 font-mono">
+							<span className="text-[10px] uppercase font-bold text-muted-foreground font-mono">
 								Customer Type:
 							</span>
 							<Select
@@ -560,10 +570,10 @@ export function LtvCacAovTab() {
 									setCustomerTypeFilter(val as CustomerTypeFilter)
 								}
 							>
-								<SelectTrigger className="w-[140px] h-9 text-xs bg-zinc-950 border-zinc-800 text-zinc-200">
+								<SelectTrigger className="w-[140px] h-9 text-xs">
 									<SelectValue placeholder="All Customers" />
 								</SelectTrigger>
-								<SelectContent className="bg-zinc-950 border-zinc-800 text-zinc-200">
+								<SelectContent>
 									<SelectItem value="all">All Customers</SelectItem>
 									<SelectItem value="new">New Customers</SelectItem>
 									<SelectItem value="existing">Existing Customers</SelectItem>
@@ -573,7 +583,7 @@ export function LtvCacAovTab() {
 
 						{/* AOV Stability Dropdown */}
 						<div className="flex items-center gap-2">
-							<span className="text-[10px] uppercase font-bold text-zinc-500 font-mono">
+							<span className="text-[10px] uppercase font-bold text-muted-foreground font-mono">
 								AOV View:
 							</span>
 							<Select
@@ -582,10 +592,10 @@ export function LtvCacAovTab() {
 									setAovStabilityFilter(val as AovStabilityFilter)
 								}
 							>
-								<SelectTrigger className="w-[140px] h-9 text-xs bg-zinc-950 border-zinc-800 text-zinc-200">
+								<SelectTrigger className="w-[140px] h-9 text-xs">
 									<SelectValue placeholder="All Stability" />
 								</SelectTrigger>
-								<SelectContent className="bg-zinc-950 border-zinc-800 text-zinc-200">
+								<SelectContent>
 									<SelectItem value="all">All</SelectItem>
 									<SelectItem value="stable">Stable</SelectItem>
 									<SelectItem value="increasing">Increasing</SelectItem>
@@ -596,10 +606,10 @@ export function LtvCacAovTab() {
 
 						{/* Search input */}
 						<div className="relative w-full sm:w-[200px]">
-							<Search className="absolute left-2.5 top-2.5 size-4 text-zinc-500" />
+							<Search className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
 							<Input
 								placeholder="Search name or mobile..."
-								className="pl-9 h-9 text-xs w-full bg-zinc-950 border-zinc-800 text-zinc-200 placeholder:text-zinc-500"
+								className="pl-9 h-9 text-xs w-full"
 								value={searchQuery}
 								onChange={(e) => setSearchQuery(e.target.value)}
 							/>
@@ -610,56 +620,56 @@ export function LtvCacAovTab() {
 							variant="outline"
 							size="sm"
 							onClick={handleExport}
-							className="h-9 px-3 bg-zinc-950 border-[0.5px] border-zinc-800 text-xs text-zinc-100 hover:bg-zinc-900 rounded-lg flex items-center gap-1.5 shrink-0"
+							className="h-9 px-3 text-xs flex items-center gap-1.5 shrink-0"
 						>
 							<Download className="size-4" />
 							Export PDF
 						</Button>
 					</div>
 				</CardHeader>
-				<CardContent className="p-0 bg-zinc-950">
+				<CardContent className="p-0">
 					<div className="overflow-x-auto w-full">
 						<Table className="min-w-[800px] border-collapse">
 							<TableHeader>
-								<TableRow className="border-b border-zinc-900 hover:bg-transparent">
-									<TableHead className="font-semibold text-xs py-3 pl-4 text-zinc-400">
+								<TableRow className="border-b border-border hover:bg-transparent">
+									<TableHead className="font-semibold text-xs py-3 pl-4 text-muted-foreground">
 										Rank
 									</TableHead>
-									<TableHead className="font-semibold text-xs py-3 text-zinc-400">
+									<TableHead className="font-semibold text-xs py-3 text-muted-foreground">
 										Customer Mobile
 									</TableHead>
-									<TableHead className="font-semibold text-xs py-3 text-zinc-400">
+									<TableHead className="font-semibold text-xs py-3 text-muted-foreground">
 										Customer Name
 									</TableHead>
-									<TableHead className="font-semibold text-xs py-3 text-center text-zinc-400">
+									<TableHead className="font-semibold text-xs py-3 text-center text-muted-foreground">
 										Type
 									</TableHead>
-									<TableHead className="font-semibold text-xs py-3 text-right text-zinc-400">
+									<TableHead className="font-semibold text-xs py-3 text-right text-muted-foreground">
 										Orders
 									</TableHead>
-									<TableHead className="font-semibold text-xs py-3 text-right text-zinc-400">
+									<TableHead className="font-semibold text-xs py-3 text-right text-muted-foreground">
 										Revenue
 									</TableHead>
-									<TableHead className="font-semibold text-xs py-3 text-right text-zinc-400">
+									<TableHead className="font-semibold text-xs py-3 text-right text-muted-foreground">
 										AOV
 									</TableHead>
-									<TableHead className="font-semibold text-xs py-3 text-right text-zinc-400">
+									<TableHead className="font-semibold text-xs py-3 text-right text-muted-foreground">
 										LTV
 									</TableHead>
-									<TableHead className="font-semibold text-xs py-3 text-center text-zinc-400">
+									<TableHead className="font-semibold text-xs py-3 text-center text-muted-foreground">
 										AOV Trend
 									</TableHead>
-									<TableHead className="font-semibold text-xs py-3 text-right pr-4 text-zinc-400">
+									<TableHead className="font-semibold text-xs py-3 text-right pr-4 text-muted-foreground">
 										Last Purchase
 									</TableHead>
 								</TableRow>
 							</TableHeader>
 							<TableBody>
 								{paginatedCustomers.length === 0 ? (
-									<TableRow className="border-b border-zinc-900 hover:bg-transparent">
+									<TableRow className="border-b border-border hover:bg-transparent">
 										<TableCell
 											colSpan={10}
-											className="h-32 text-center text-zinc-500 text-xs font-mono"
+											className="h-32 text-center text-muted-foreground text-xs font-mono"
 										>
 											No matching customers found.
 										</TableCell>
@@ -670,38 +680,38 @@ export function LtvCacAovTab() {
 										return (
 											<TableRow
 												key={getCustomerRowKey(cust)}
-												className="border-b border-zinc-900 hover:bg-zinc-900/40"
+												className="border-b border-border hover:bg-muted/40"
 											>
-												<TableCell className="font-mono text-xs py-3 pl-4 text-zinc-500">
+												<TableCell className="font-mono text-xs py-3 pl-4 text-muted-foreground">
 													#{actualIndex + 1}
 												</TableCell>
-												<TableCell className="font-mono text-xs py-3 text-zinc-300">
+												<TableCell className="font-mono text-xs py-3 text-foreground/80">
 													{String(cust.customerMobile ?? "")}
 												</TableCell>
-												<TableCell className="font-semibold text-xs py-3 text-zinc-200">
+												<TableCell className="font-semibold text-xs py-3 text-foreground">
 													{String(cust.customerName ?? "Valued Customer")}
 												</TableCell>
 												<TableCell className="py-3 text-center">
 													{getTypeBadge(cust.customerType ?? "Existing")}
 												</TableCell>
-												<TableCell className="font-mono text-xs py-3 text-right tabular-nums text-zinc-300">
+												<TableCell className="font-mono text-xs py-3 text-right tabular-nums text-foreground/80">
 													{(cust.orders ?? 0).toLocaleString()}
 												</TableCell>
-												<TableCell className="font-mono text-xs py-3 text-right tabular-nums text-zinc-300">
+												<TableCell className="font-mono text-xs py-3 text-right tabular-nums text-foreground/80">
 													{formatCurrency(cust.revenue ?? 0, {
 														noDecimals: true,
 													})}
 												</TableCell>
-												<TableCell className="font-mono text-xs py-3 text-right tabular-nums text-zinc-300">
+												<TableCell className="font-mono text-xs py-3 text-right tabular-nums text-foreground/80">
 													{formatCurrency(cust.aov ?? 0, { noDecimals: true })}
 												</TableCell>
-												<TableCell className="font-bold font-mono text-xs py-3 text-right tabular-nums text-white">
+												<TableCell className="font-bold font-mono text-xs py-3 text-right tabular-nums text-foreground">
 													{formatCurrency(cust.ltv ?? 0, { noDecimals: true })}
 												</TableCell>
 												<TableCell className="py-3 text-center">
 													{getStabilityBadge(cust.aovStability ?? "Stable")}
 												</TableCell>
-												<TableCell className="font-mono text-xs py-3 text-right tabular-nums pr-4 text-zinc-400">
+												<TableCell className="font-mono text-xs py-3 text-right tabular-nums pr-4 text-muted-foreground">
 													{(cust.lastPurchaseDays ?? 0) === 0
 														? "Today"
 														: (cust.lastPurchaseDays ?? 0) === 1
@@ -717,8 +727,8 @@ export function LtvCacAovTab() {
 					</div>
 
 					{/* Table Pagination Controls */}
-					<div className="flex items-center justify-between px-6 py-4 border-t border-zinc-900 bg-zinc-950">
-						<div className="flex items-center gap-2 text-xs text-zinc-500 font-mono">
+					<div className="flex items-center justify-between px-6 py-4 border-t border-border bg-card">
+						<div className="flex items-center gap-2 text-xs text-muted-foreground font-mono">
 							<span>Rows per page:</span>
 							<Select
 								value={String(pageSize)}
@@ -727,10 +737,10 @@ export function LtvCacAovTab() {
 									setCurrentPage(1);
 								}}
 							>
-								<SelectTrigger className="w-[70px] h-8 bg-zinc-950 border-zinc-800 text-xs rounded-lg text-zinc-200 focus:ring-0 focus:ring-offset-0">
+								<SelectTrigger className="w-[70px] h-8 text-xs rounded-lg focus:ring-0 focus:ring-offset-0">
 									<SelectValue />
 								</SelectTrigger>
-								<SelectContent className="bg-zinc-950 border-zinc-800 text-zinc-200">
+								<SelectContent>
 									<SelectItem value="10">10</SelectItem>
 									<SelectItem value="15">15</SelectItem>
 									<SelectItem value="20">20</SelectItem>
@@ -753,11 +763,11 @@ export function LtvCacAovTab() {
 								size="sm"
 								onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
 								disabled={currentPage === 1}
-								className="h-8 w-8 p-0 bg-zinc-950 border-zinc-800 rounded-lg text-zinc-400 hover:text-zinc-200 disabled:opacity-50"
+								className="h-8 w-8 p-0 rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-50"
 							>
 								<ChevronLeft className="size-4" />
 							</Button>
-							<span className="text-xs text-zinc-400 font-mono">
+							<span className="text-xs text-muted-foreground font-mono">
 								Page {currentPage} of {totalPages}
 							</span>
 							<Button
@@ -767,7 +777,7 @@ export function LtvCacAovTab() {
 									setCurrentPage((p) => Math.min(totalPages, p + 1))
 								}
 								disabled={currentPage === totalPages}
-								className="h-8 w-8 p-0 bg-zinc-950 border-zinc-800 rounded-lg text-zinc-400 hover:text-zinc-200 disabled:opacity-50"
+								className="h-8 w-8 p-0 rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-50"
 							>
 								<ChevronRight className="size-4" />
 							</Button>

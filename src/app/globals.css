@@ -72,11 +72,18 @@ These serve as the fallback; there is no separate default.css file. */
 	--border: oklch(0.922 0 0);
 	--input: oklch(0.922 0 0);
 	--ring: oklch(0.708 0 0);
-	--chart-1: oklch(0.87 0 0);
-	--chart-2: oklch(0.556 0 0);
+	/* Chart series palette — grayscale only (no chart may use color hues).
+	   Ordered darkest-first for light mode: chart-1 (near-black) is the
+	   highest-contrast option against a white background, descending to
+	   chart-5 (a light-but-visible gray) for the least-prominent series.
+	   .dark below reverses this so chart-1 is still the highest-contrast
+	   choice against a dark background — same 5 grayscale values, reordered
+	   per theme, not a new palette. */
+	--chart-1: oklch(0.269 0 0);
+	--chart-2: oklch(0.371 0 0);
 	--chart-3: oklch(0.439 0 0);
-	--chart-4: oklch(0.371 0 0);
-	--chart-5: oklch(0.269 0 0);
+	--chart-4: oklch(0.556 0 0);
+	--chart-5: oklch(0.87 0 0);
 	--sidebar: oklch(0.985 0 0);
 	--sidebar-foreground: oklch(0.145 0 0);
 	--sidebar-primary: oklch(0.205 0 0);
@@ -112,11 +119,16 @@ These serve as the fallback; there is no separate default.css file. */
 	--border: oklch(1 0 0 / 10%);
 	--input: oklch(1 0 0 / 15%);
 	--ring: oklch(0.556 0 0);
+	/* Reverse of :root's ordering — chart-1 (lightest) gives max contrast
+	   against this theme's dark background, descending to chart-5 (still
+	   above the 0.145 background floor so the faintest series stays
+	   visible instead of vanishing into it). Same 5 grayscale values as
+	   light mode, reassigned per theme — not a new palette. */
 	--chart-1: oklch(0.87 0 0);
-	--chart-2: oklch(0.556 0 0);
-	--chart-3: oklch(0.439 0 0);
-	--chart-4: oklch(0.371 0 0);
-	--chart-5: oklch(0.269 0 0);
+	--chart-2: oklch(0.708 0 0);
+	--chart-3: oklch(0.556 0 0);
+	--chart-4: oklch(0.439 0 0);
+	--chart-5: oklch(0.371 0 0);
 	--sidebar: oklch(0.205 0 0);
 	--sidebar-foreground: oklch(0.985 0 0);
 	--sidebar-primary: oklch(0.488 0.243 264.376);

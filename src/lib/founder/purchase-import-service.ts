@@ -42,9 +42,13 @@ function chunkRows(rows: ParsedPurchaseRow[]) {
 /**
  * Parse + normalize a purchase workbook and commit into `purchase_fact`.
  *
- * Store normalization reuses the SAME normalizer as sales, so head-office /
+ * Store normalization reuses the SAME normalizer as sales: head-office /
  * employee billed_by values (Surjeet Kumar, Master Admin, AwfisGgn Ggn, ...)
- * continue collapsing into SmartworksNoida Noida. Head office is never surfaced.
+ * resolve to SmartworksNoida Noida via explicit, registered rows in
+ * store_alias_mapping — never via a guess. Any billed_by value with no
+ * exact store_dimension match and no store_alias_mapping row is
+ * unresolved and the row is quarantined rather than silently attributed
+ * to an existing store (Phase 6A data-integrity fix).
  */
 export async function commitPurchaseUploadFile(
 	db: FounderSql,
@@ -85,9 +89,22 @@ export async function commitPurchaseUploadFile(
 		}
 	> = {};
 
-	const mappedRows: ParsedPurchaseRow[] = parsed.rows.map((row) => {
+	// Unknown-store rows are quarantined, never silently attributed to an
+	// existing store (Phase 6A data-integrity fix). See store-normalizer.ts.
+	const mappedRows: ParsedPurchaseRow[] = [];
+	const unresolvedReasons: string[] = [];
+
+	for (const row of parsed.rows) {
 		const rawBilled = row.billed_by;
 		const mapping = normalizer.normalize(rawBilled);
+
+		if (!mapping.resolved) {
+			unresolvedReasons.push(
+				`Row (bill: ${row.bill_no || "unknown"}): Unknown store '${mapping.rawValue || "(empty)"}'. Store mapping is required before import.`,
+			);
+			continue;
+		}
+
 		if (!normalizationReport[mapping.canonicalStore]) {
 			normalizationReport[mapping.canonicalStore] = {
 				displayName: mapping.displayName,
@@ -101,13 +118,28 @@ export async function commitPurchaseUploadFile(
 				(reportItem.rawSourcesCount[rawBilled] || 0) + 1;
 			reportItem.totalRows += 1;
 		}
-		return {
+		mappedRows.push({
 			...row,
 			source_billed_by: rawBilled,
 			billed_by: mapping.canonicalStore,
 			store_id: mapping.storeId,
+		});
+	}
+
+	const totalQuarantined = parsed.quarantined + unresolvedReasons.length;
+	const quarantineReasons = [
+		...parsed.quarantine_reasons,
+		...unresolvedReasons,
+	];
+
+	if (mappedRows.length === 0) {
+		return {
+			success: false,
+			error: "No valid purchase rows found. Cannot commit upload.",
+			quarantined: totalQuarantined,
+			quarantineReasons,
 		};
-	});
+	}
 
 	const dates = mappedRows.map((r) => r.purchase_date).sort();
 	const dateRange = { start: dates[0] ?? null, end: dates.at(-1) ?? null };
@@ -134,7 +166,7 @@ export async function commitPurchaseUploadFile(
           date_range_start, date_range_end, upload_type, net_purchase
         ) VALUES (
           ${batchId}, ${file.name}, 'success', ${parsed.raw_row_count},
-          ${mappedRows.length}, ${parsed.quarantined},
+          ${mappedRows.length}, ${totalQuarantined},
           ${dateRange.start}, ${dateRange.end}, ${uploadType}, ${netPurchase}::numeric
         )
       `,
@@ -193,8 +225,8 @@ export async function commitPurchaseUploadFile(
 		success: true,
 		batchId,
 		rowsInserted: mappedRows.length,
-		quarantined: parsed.quarantined,
-		quarantineReasons: parsed.quarantine_reasons,
+		quarantined: totalQuarantined,
+		quarantineReasons,
 		dateRange,
 		netPurchase,
 		normalizationReport,
@@ -280,9 +312,22 @@ export async function validateStagedPurchaseUpload(
 			}
 		> = {};
 
-		const mappedRows: ParsedPurchaseRow[] = parsed.rows.map((row) => {
+		// Unknown-store rows are quarantined, never silently attributed to an
+		// existing store (Phase 6A data-integrity fix). See store-normalizer.ts.
+		const mappedRows: ParsedPurchaseRow[] = [];
+		const unresolvedReasons: string[] = [];
+
+		for (const row of parsed.rows) {
 			const rawBilled = row.billed_by;
 			const mapping = normalizer.normalize(rawBilled);
+
+			if (!mapping.resolved) {
+				unresolvedReasons.push(
+					`Row (bill: ${row.bill_no || "unknown"}): Unknown store '${mapping.rawValue || "(empty)"}'. Store mapping is required before import.`,
+				);
+				continue;
+			}
+
 			if (!normalizationReport[mapping.canonicalStore]) {
 				normalizationReport[mapping.canonicalStore] = {
 					displayName: mapping.displayName,
@@ -296,13 +341,28 @@ export async function validateStagedPurchaseUpload(
 					(reportItem.rawSourcesCount[rawBilled] || 0) + 1;
 				reportItem.totalRows += 1;
 			}
-			return {
+			mappedRows.push({
 				...row,
 				source_billed_by: rawBilled,
 				billed_by: mapping.canonicalStore,
 				store_id: mapping.storeId,
+			});
+		}
+
+		const totalQuarantined = parsed.quarantined + unresolvedReasons.length;
+		const quarantineReasons = [
+			...parsed.quarantine_reasons,
+			...unresolvedReasons,
+		];
+
+		if (mappedRows.length === 0) {
+			return {
+				success: false,
+				error: "No valid purchase rows found. Cannot commit upload.",
+				quarantined: totalQuarantined,
+				quarantineReasons,
 			};
-		});
+		}
 
 		const dates = mappedRows.map((r) => r.purchase_date).sort();
 		const dateRange = { start: dates[0] ?? null, end: dates.at(-1) ?? null };
@@ -315,8 +375,8 @@ export async function validateStagedPurchaseUpload(
 			success: true,
 			batchId,
 			rowsInserted: mappedRows.length,
-			quarantined: parsed.quarantined,
-			quarantineReasons: parsed.quarantine_reasons,
+			quarantined: totalQuarantined,
+			quarantineReasons,
 			dateRange,
 			netPurchase,
 			normalizationReport,

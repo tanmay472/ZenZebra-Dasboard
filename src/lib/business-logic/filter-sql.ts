@@ -6,12 +6,6 @@ export const FOOD_CATEGORIES = [
 	"BEVERAGES",
 ] as const;
 
-export const STORE_OPTIONS = [
-	{ billedBy: "Klj store", displayName: "KLJ" },
-	{ billedBy: "SmartworksNoida Noida", displayName: "Smart Works Noida" },
-	{ billedBy: "Head office", displayName: "Head office" },
-] as const;
-
 export function retailCategoryClause(
 	categoryScope?: DashboardFilters["categoryScope"],
 ) {

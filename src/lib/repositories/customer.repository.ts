@@ -15,6 +15,14 @@ export interface AovOrderRow {
 }
 
 export const customerRepository = {
+	// This is the canonical, all-history "Customer Lifetime Value": average
+	// total lifetime net revenue per identified customer, with no date-range
+	// restriction. retention.service.ts's getRetentionOverview() computes a
+	// differently-scoped "revenue per customer" that resets with the
+	// selected date range — that is a period proxy, not lifetime value, and
+	// is labeled "Revenue per Customer (Period)" in the UI specifically to
+	// avoid being confused with this figure (Phase 6 audit). Cloud AI's
+	// LTV tool must read from this function, not the period proxy.
 	async getLtvValue(store: string | null): Promise<number> {
 		const query = `
       WITH customer_rev AS (

@@ -3,24 +3,52 @@ import {
 	upsertInventory,
 } from "../../repositories/odoo.repository";
 import { getKnownLocationIds } from "../../repositories/odoo-dimensions.repository";
-import type { OdooClient } from "../client";
+import { formatDateTimeForOdoo, type OdooClient } from "../client";
 import { syncLocationDimension } from "./syncDimensions";
 
 /**
  * Synchronizes current stock levels (stock.quant) from Odoo.
- * Since stock.quant represents current point-in-time stock levels,
- * we fetch the active inventory and upsert it.
+ *
+ * Incremental via write_date >= lastSyncTime, same pattern as syncSales —
+ * this used to do a full stock.quant table scan on EVERY poll cycle
+ * (no lastSyncTime filter at all), which for a catalog of a few thousand
+ * SKUs took minutes per cycle and, since inventory is HIGH priority and
+ * queued ahead of sales_orders, pushed every new sale's DB arrival back by
+ * however long that full scan took — the measured root cause of new orders
+ * landing in Neon several minutes after being placed in Odoo, not a
+ * webhook/cache issue.
  */
-export async function syncInventory(client: OdooClient): Promise<number> {
+export async function syncInventory(
+	client: OdooClient,
+	lastSyncTime: string | null,
+): Promise<number> {
 	console.log("[syncInventory] Starting stock levels sync...");
 
-	const fields = ["product_id", "location_id", "quantity", "reserved_quantity"];
+	const fields = [
+		"product_id",
+		"location_id",
+		"quantity",
+		"reserved_quantity",
+		"write_date",
+	];
 
 	// Filter to check only internal stock locations (e.g. usage = 'internal')
 	// To be safe and compatible with all Odoo setups, we query all stock.quant,
 	// but restrict to internal locations if we know the domain. For a general POC,
 	// checking location_id.usage = 'internal' is standard in Odoo.
-	const domain = [["location_id.usage", "=", "internal"]];
+	const domain: any[] = [["location_id.usage", "=", "internal"]];
+
+	// Same 10-minute safety lookback as syncSales — covers clock skew and any
+	// write that lands just before the last recorded watermark.
+	const LOOKBACK_MS = 10 * 60 * 1000;
+	const effectiveLastSync = lastSyncTime
+		? new Date(
+				Math.max(0, new Date(lastSyncTime).getTime() - LOOKBACK_MS),
+			).toISOString()
+		: null;
+	if (effectiveLastSync) {
+		domain.push(["write_date", ">=", formatDateTimeForOdoo(effectiveLastSync)]);
+	}
 
 	let offset = 0;
 	const limit = 100;
@@ -58,14 +86,20 @@ export async function syncInventory(client: OdooClient): Promise<number> {
 			);
 		} catch (err: any) {
 			console.warn(
-				"[syncInventory] Failed to query stock.quant with location filters. Retrying without filters...",
+				"[syncInventory] Failed to query stock.quant with location filters. Retrying without the location-usage filter...",
 				err.message,
 			);
-			// Fallback: Query without usage = internal filter in case standard SaaS permissions restrict location queries
+			// Fallback: drop only the usage='internal' clause (in case standard
+			// SaaS permissions restrict location field access) — keep the
+			// write_date incremental filter so a permission-triggered retry
+			// doesn't silently fall back to a full-table scan.
+			const fallbackDomain = effectiveLastSync
+				? [["write_date", ">=", formatDateTimeForOdoo(effectiveLastSync)]]
+				: [];
 			records = await client.fetchBatch(
 				"stock.quant",
 				fields,
-				[],
+				fallbackDomain,
 				"id asc",
 				limit,
 				offset,

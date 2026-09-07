@@ -10,8 +10,20 @@ export interface UseRealtimeFreshnessOptions {
 
 /**
  * Client-side real-time freshness hook.
- * Polls server freshness timestamp every 5 seconds ONLY while tab is active
- * and triggers Next.js `router.refresh()` automatically when data changes.
+ * Polls a server freshness signal every 5 seconds (ONLY while the tab is
+ * active) and triggers Next.js `router.refresh()` automatically when it
+ * changes.
+ *
+ * The signal is the always-on poller's own `lastChangeTimestamp` (updated
+ * every 1-15s by AlwaysOnSyncWorker whenever a poll cycle finds real
+ * changes — src/lib/odoo/sync/worker.ts), not `webhookQueue.lastEventReceived`.
+ * Odoo webhooks are not currently configured/firing in this environment
+ * (webhook_events has had no new rows since 2026-09-04) — keying the
+ * refresh trigger off a channel with no live traffic meant the dashboard
+ * only ever updated on a manual reload, regardless of how fresh the
+ * underlying DB actually was. The webhook signal is kept as a secondary
+ * trigger so it starts working immediately if webhooks are ever wired up,
+ * without needing this hook changed again.
  */
 export function useRealtimeFreshness(
 	options: UseRealtimeFreshnessOptions = {},
@@ -39,22 +51,25 @@ export function useRealtimeFreshness(
 				});
 				if (!res.ok) return;
 				const data = await res.json();
-				const lastReceived = data?.checks?.webhookQueue?.lastEventReceived;
+				const workerChange = data?.checks?.worker?.state?.lastChangeTimestamp;
+				const webhookReceived = data?.checks?.webhookQueue?.lastEventReceived;
+				// Combine both signals into one key — either one changing means
+				// new data landed, and whichever is actually live drives the refresh.
+				const signal =
+					(workerChange ? `w:${workerChange}` : "") +
+					(webhookReceived ? `h:${webhookReceived}` : "");
 
-				if (lastReceived) {
-					if (
-						lastProcessedRef.current &&
-						lastProcessedRef.current !== lastReceived
-					) {
+				if (signal) {
+					if (lastProcessedRef.current && lastProcessedRef.current !== signal) {
 						console.log(
-							"[realtimeFreshness] Webhook event detected. Triggering router.refresh()",
+							"[realtimeFreshness] New sync data detected. Triggering router.refresh()",
 						);
 						router.refresh();
 						if (typeof window !== "undefined") {
 							window.dispatchEvent(new CustomEvent("odoo-sync-updated"));
 						}
 					}
-					lastProcessedRef.current = lastReceived;
+					lastProcessedRef.current = signal;
 				}
 			} catch {
 				// Silent ignore network errors

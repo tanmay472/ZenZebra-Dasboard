@@ -33,6 +33,14 @@ export async function getRetentionOverview(
       AND ($4::text[] IS NULL OR category <> ALL($4::text[]))
   `;
 
+	// Metric-naming note (Phase 6 audit): "repeat" here means customers
+	// with >1 distinct order strictly within the selected period.
+	// customer-intelligence.ts computes a differently defined "repeat
+	// customers" — (total customers) − (customers whose lifetime-first
+	// purchase falls in this period). Both are legitimate but distinct;
+	// they surface under distinct UI labels ("Repeat Purchase Rate" here
+	// vs. "Repeat Customers" on sales/customer-intelligence views) and
+	// must never be silently swapped for one another.
 	const repeatCustomersQuery = `
     SELECT COUNT(*)::integer AS repeat_customers FROM (
       SELECT customer_mobile
@@ -114,6 +122,13 @@ export async function getRetentionOverview(
 	const prevRepeatRate =
 		prevCustomers > 0 ? (prevRepeat / prevCustomers) * 100 : 0;
 
+	// This is a period-window revenue-per-customer proxy, NOT true lifetime
+	// value — it resets with the selected date range. The genuine
+	// all-history LTV lives in customer.repository.ts's getLtvValue() /
+	// ltv.service.ts's getLtvReportData(). Phase 6 audit: the retention
+	// overview page previously labeled this "Customer Lifetime Value",
+	// which conflated the two — the UI label is now "Revenue per Customer
+	// (Period)" to keep this field honest.
 	const currLtv = currCustomers > 0 ? currRevenue / currCustomers : 0;
 	const prevLtv =
 		prevCustomers > 0 ? n(prevRevenueResult[0]?.revenue) / prevCustomers : 0;

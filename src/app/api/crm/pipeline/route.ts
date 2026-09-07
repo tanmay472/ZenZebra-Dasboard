@@ -11,7 +11,7 @@ export async function GET(req: NextRequest) {
 		const search = searchParams.get("search") || undefined;
 
 		const [summary, leads] = await Promise.all([
-			getCrmPipelineSummary(),
+			getCrmPipelineSummary({ store }),
 			getCrmLeads({ store, search }),
 		]);
 

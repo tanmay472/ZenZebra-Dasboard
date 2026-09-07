@@ -149,7 +149,7 @@ export default function OverviewPage() {
 							icon={TrendingUp}
 						/>
 						<MetricCard
-							title="Customer Lifetime Value"
+							title="Revenue per Customer (Period)"
 							value={`₹${overview?.ltv?.current}`}
 							growth={overview?.ltv?.growth}
 							comparisonLabel="vs last period"
@@ -212,12 +212,12 @@ export default function OverviewPage() {
 													>
 														<stop
 															offset="5%"
-															stopColor="#3b82f6"
+															stopColor="var(--chart-1)"
 															stopOpacity={0.4}
 														/>
 														<stop
 															offset="95%"
-															stopColor="#3b82f6"
+															stopColor="var(--chart-1)"
 															stopOpacity={0}
 														/>
 													</linearGradient>
@@ -230,12 +230,12 @@ export default function OverviewPage() {
 													>
 														<stop
 															offset="5%"
-															stopColor="#10b981"
+															stopColor="var(--chart-4)"
 															stopOpacity={0.4}
 														/>
 														<stop
 															offset="95%"
-															stopColor="#10b981"
+															stopColor="var(--chart-4)"
 															stopOpacity={0}
 														/>
 													</linearGradient>
@@ -257,7 +257,7 @@ export default function OverviewPage() {
 													type="monotone"
 													name="New Customer Revenue"
 													dataKey="newRevenue"
-													stroke="#3b82f6"
+													stroke="var(--chart-1)"
 													fillOpacity={1}
 													fill="url(#newRev)"
 													strokeWidth={2}
@@ -266,7 +266,8 @@ export default function OverviewPage() {
 													type="monotone"
 													name="Returning Customer Revenue"
 													dataKey="returningRevenue"
-													stroke="#10b981"
+													stroke="var(--chart-4)"
+													strokeDasharray="6 3"
 													fillOpacity={1}
 													fill="url(#retRev)"
 													strokeWidth={2}
@@ -290,12 +291,12 @@ export default function OverviewPage() {
 													>
 														<stop
 															offset="5%"
-															stopColor="#3b82f6"
+															stopColor="var(--chart-1)"
 															stopOpacity={0.4}
 														/>
 														<stop
 															offset="95%"
-															stopColor="#3b82f6"
+															stopColor="var(--chart-1)"
 															stopOpacity={0}
 														/>
 													</linearGradient>
@@ -308,12 +309,12 @@ export default function OverviewPage() {
 													>
 														<stop
 															offset="5%"
-															stopColor="#10b981"
+															stopColor="var(--chart-4)"
 															stopOpacity={0.4}
 														/>
 														<stop
 															offset="95%"
-															stopColor="#10b981"
+															stopColor="var(--chart-4)"
 															stopOpacity={0}
 														/>
 													</linearGradient>
@@ -335,7 +336,7 @@ export default function OverviewPage() {
 													type="monotone"
 													name="New Customers"
 													dataKey="newCustomers"
-													stroke="#3b82f6"
+													stroke="var(--chart-1)"
 													fillOpacity={1}
 													fill="url(#newCust)"
 													strokeWidth={2}
@@ -344,7 +345,8 @@ export default function OverviewPage() {
 													type="monotone"
 													name="Returning Customers"
 													dataKey="returningCustomers"
-													stroke="#10b981"
+													stroke="var(--chart-4)"
+													strokeDasharray="6 3"
 													fillOpacity={1}
 													fill="url(#retCust)"
 													strokeWidth={2}

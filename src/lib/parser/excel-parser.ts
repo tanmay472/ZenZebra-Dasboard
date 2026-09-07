@@ -279,9 +279,13 @@ export function parseRawRows(rawRows: Record<string, unknown>[]): ParseResult {
 			netAmount = Number(raw[resolved.net_amount.matchedColumn]);
 		}
 
-		// Resolve tax rate (if tax_rate column is found, else default to 18%)
-		let taxRate = 0.18;
-		// We search the row keys for tax rate if not explicitly mapped
+		// Resolve tax rate from an explicit tax_rate column only — GST/tax
+		// slabs vary by product (0/5/12/18/28%, exempt), so a missing rate
+		// must never be assumed as a fixed percentage. A row with no
+		// explicit net_amount and no discoverable tax_rate is left as
+		// NaN below, which the validation block already quarantines
+		// ("invalid net_amount") instead of silently fabricating a split.
+		let taxRate: number | null = null;
 		const taxRateHeader = rowHeadersContainTaxRate(Object.keys(raw));
 		if (taxRateHeader) {
 			const parsedRate = Number(raw[taxRateHeader]);
@@ -290,7 +294,7 @@ export function parseRawRows(rawRows: Record<string, unknown>[]): ParseResult {
 			}
 		}
 
-		if (Number.isNaN(netAmount)) {
+		if (Number.isNaN(netAmount) && taxRate !== null) {
 			netAmount = grossAmount / (1 + taxRate);
 		}
 

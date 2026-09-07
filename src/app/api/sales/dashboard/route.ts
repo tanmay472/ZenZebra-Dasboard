@@ -31,7 +31,10 @@ import {
 import { generateRootCauseRecommendation } from "@/lib/intelligence/recommendation-rules";
 import { buildRootCause } from "@/lib/intelligence/root-cause-engine";
 import { getStoreDiagnostics } from "@/lib/intelligence/store-diagnostics";
-import { getLatestTelemetryStatus } from "@/lib/repositories/odoo.repository";
+import {
+	getDashboardDataFreshness,
+	getLatestTelemetryStatus,
+} from "@/lib/repositories/odoo.repository";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -39,7 +42,7 @@ export const revalidate = 0;
 
 const responseCache = new Map<
 	string,
-	{ timestamp: number; lastSyncAt: string | null; payload: any }
+	{ timestamp: number; dataFreshness: string | null; payload: any }
 >();
 
 function getDefaultDateRange() {
@@ -73,7 +76,10 @@ export async function GET(req: NextRequest) {
 		} satisfies DashboardFilters);
 		const periods = getComparisonPeriods(filters);
 
-		const telemetry = await getLatestTelemetryStatus();
+		const [telemetry, dataFreshness] = await Promise.all([
+			getLatestTelemetryStatus(),
+			getDashboardDataFreshness(),
+		]);
 
 		const cacheKey = JSON.stringify({ filters, periods });
 		const now = Date.now();
@@ -81,7 +87,7 @@ export async function GET(req: NextRequest) {
 		if (
 			cached &&
 			now - cached.timestamp < 15000 &&
-			cached.lastSyncAt === telemetry.lastSyncAt
+			cached.dataFreshness === dataFreshness
 		) {
 			return NextResponse.json(cached.payload, {
 				headers: {
@@ -104,6 +110,22 @@ export async function GET(req: NextRequest) {
 			}
 		}
 
+		// storePerformance/storeProfitability are needed both directly by this
+		// route AND by getStoreDiagnostics below — each started ONCE as a
+		// shared promise and consumed by both, instead of getStoreDiagnostics
+		// re-fetching them itself (it used to, doubling this work on every
+		// request; see getStoreDiagnostics's doc comment). Deliberately NOT
+		// awaited before the main Promise.all: doing so would force all the
+		// other, unrelated functions to wait on these two as well, trading
+		// one bottleneck for another. Only getStoreDiagnostics's own branch
+		// awaits them, so every branch still runs fully concurrently.
+		const storePerformancePromise = getStorePerformance(sql, periods, filters);
+		const storeProfitabilityPromise = getStoreProfitability(
+			sql,
+			periods,
+			filters,
+		);
+
 		const [
 			dailyHealthResult,
 			storePerformance,
@@ -121,7 +143,7 @@ export async function GET(req: NextRequest) {
 			storeDiagnostics,
 		] = await Promise.all([
 			getDailyHealthMetrics(sql, periods, filters),
-			getStorePerformance(sql, periods, filters),
+			storePerformancePromise,
 			getBrandPerformance(sql, periods, filters),
 			getSkuPerformance(sql, periods, filters),
 			getCategoryBillCuts(sql, periods, filters),
@@ -129,11 +151,17 @@ export async function GET(req: NextRequest) {
 			getCustomerIntelligence(sql, periods, filters),
 			getPaymentAnalysis(sql, periods, filters),
 			getProfitability(sql, periods, filters),
-			getStoreProfitability(sql, periods, filters),
+			storeProfitabilityPromise,
 			getBrandProfitability(sql, periods, filters),
 			getSkuProfitability(sql, periods, filters),
 			getCategoryProfitability(sql, periods, filters),
-			getStoreDiagnostics(sql, periods, filters),
+			(async () => {
+				const [perf, profit] = await Promise.all([
+					storePerformancePromise,
+					storeProfitabilityPromise,
+				]);
+				return getStoreDiagnostics(sql, periods, filters, perf, profit);
+			})(),
 		]);
 
 		// Purchase availability drives graceful "Purchase data unavailable" states.
@@ -265,7 +293,7 @@ export async function GET(req: NextRequest) {
 
 		responseCache.set(cacheKey, {
 			timestamp: Date.now(),
-			lastSyncAt: telemetry.lastSyncAt,
+			dataFreshness,
 			payload,
 		});
 

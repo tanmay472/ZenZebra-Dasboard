@@ -73,7 +73,7 @@ async function main() {
 
 	// 4. Sync Inventory (stock.quant)
 	console.log("[Reconcile] 4/4 Syncing Stock Quants...");
-	const invCount = await syncInventory(client);
+	const invCount = await syncInventory(client, null);
 	console.log(`[Reconcile] Inventory records synced: ${invCount}`);
 
 	const testDates = [

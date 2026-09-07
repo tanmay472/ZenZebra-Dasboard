@@ -14,14 +14,18 @@ export async function getCrmIntelligence() {
 		getCrmLeads(),
 	]);
 
+	// Fabrication fix (repo-wide sweep): this previously passed
+	// industryFit/engagementRecencyDays/hasDecisionMakerAccess/
+	// buyingTimelineDays as hardcoded constants identical for every lead —
+	// none of those are real per-lead fields on crm_leads (see
+	// crm.repository.ts's CrmLead interface). Only expectedRevenue and
+	// source are genuine per-lead data, so only those are passed through;
+	// the unset factors fall back to calculateLeadScore()'s own neutral
+	// defaults instead of an invented specific value per lead.
 	const scoredLeads = rawLeads.map((lead) => {
 		const scoreResult = calculateLeadScore({
 			expectedRevenue: lead.expectedRevenue,
-			industryFit: "Retail Corporate",
-			sourceQuality: lead.source || "Inbound Web",
-			engagementRecencyDays: 2,
-			hasDecisionMakerAccess: true,
-			buyingTimelineDays: 14,
+			sourceQuality: lead.source,
 		});
 
 		return {
@@ -53,10 +57,10 @@ export async function getCrmIntelligence() {
 			pipelineVelocity: velocity,
 		},
 		leads: scoredLeads,
-		slaStatus: {
-			qualifiedAvgHours: 4.2,
-			proposalAvgHours: 18.5,
-			negotiationAvgHours: 42.0,
-		},
+		// Fabrication fix: these were hardcoded literals (4.2/18.5/42.0
+		// hours) with no query behind them at all — crm_leads has no
+		// stage-transition timestamps to compute a real per-stage duration
+		// from. Honest "unavailable" beats a plausible-looking constant.
+		slaStatus: null,
 	};
 }
