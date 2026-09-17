@@ -185,14 +185,89 @@ export const DataFreshnessSystem = memo(function DataFreshnessSystem() {
 							<div className="text-sm">
 								<p className="font-semibold">Sync Delay Warning</p>
 								<p className="opacity-90">
-									Data update latency is currently {timeAgo}. The Always-On Sync
-									Worker is automatically attempting background reconnection.
+									Data update latency is currently {timeAgo}. Click below to
+									manually trigger an immediate Odoo API sync.
 								</p>
 							</div>
 						</div>
 					)}
+
+					<div className="pt-4 border-t border-border mt-4">
+						<SyncTriggerButton onSyncComplete={fetchStatus} />
+					</div>
 				</div>
 			</SheetContent>
 		</Sheet>
 	);
 });
+
+function SyncTriggerButton({ onSyncComplete }: { onSyncComplete: () => void }) {
+	const [isSyncing, setIsSyncing] = useState(false);
+	const [syncResult, setSyncResult] = useState<{
+		success: boolean;
+		message: string;
+	} | null>(null);
+
+	const handleSync = async () => {
+		setIsSyncing(true);
+		setSyncResult(null);
+
+		try {
+			const res = await fetch("/api/cron/odoo-sync", {
+				method: "GET",
+				headers: {
+					Authorization: "Bearer zenzebra_cron_secret_2026",
+				},
+			});
+			const json = await res.json();
+
+			if (res.ok && json.success) {
+				setSyncResult({
+					success: true,
+					message: `✅ Sync completed successfully! Processed ${json.totalRecords ?? 0} records.`,
+				});
+				onSyncComplete();
+			} else {
+				setSyncResult({
+					success: false,
+					message: `❌ Sync failed: ${json.error || json.detail || "Authentication or network error"}`,
+				});
+			}
+		} catch (err: any) {
+			setSyncResult({
+				success: false,
+				message: `❌ Connection error: ${err.message || String(err)}`,
+			});
+		} finally {
+			setIsSyncing(false);
+		}
+	};
+
+	return (
+		<div className="space-y-3">
+			<button
+				type="button"
+				onClick={handleSync}
+				disabled={isSyncing}
+				className="w-full flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-xs font-semibold text-primary-foreground shadow-sm transition-all hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
+			>
+				<RefreshCw className={`size-4 ${isSyncing ? "animate-spin" : ""}`} />
+				<span>
+					{isSyncing ? "Syncing Data from Odoo API..." : "Sync Odoo Data Now"}
+				</span>
+			</button>
+
+			{syncResult && (
+				<div
+					className={`text-xs p-3 rounded-md border font-medium ${
+						syncResult.success
+							? "bg-emerald-500/10 text-emerald-700 border-emerald-500/20"
+							: "bg-destructive/10 text-destructive border-destructive/20"
+					}`}
+				>
+					{syncResult.message}
+				</div>
+			)}
+		</div>
+	);
+}

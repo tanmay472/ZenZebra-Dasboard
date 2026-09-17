@@ -8,6 +8,7 @@ export interface OdooSession {
 	uid: number;
 	userContext: Record<string, any>;
 	db: string;
+	isApiKey?: boolean;
 }
 
 export class OdooClient {
@@ -55,7 +56,61 @@ export class OdooClient {
 			`[OdooClient] Authenticating to ${this.url} (DB: ${this.db}, User: ${this.username})...`,
 		);
 
-		const response = await fetch(`${this.url}/web/session/authenticate`, {
+		try {
+			const response = await fetch(`${this.url}/web/session/authenticate`, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({
+					jsonrpc: "2.0",
+					method: "call",
+					params: {
+						db: this.db,
+						login: this.username,
+						password: this.password,
+					},
+				}),
+			});
+
+			if (response.ok) {
+				const data = await response.json();
+				if (!data.error && data.result?.uid) {
+					const setCookie = response.headers.get("set-cookie");
+					let cookieSessionId = "";
+					if (setCookie) {
+						const match = setCookie.match(/session_id=([^;]+)/);
+						if (match) {
+							cookieSessionId = match[1];
+						}
+					}
+
+					this.session = {
+						sessionId: data.result.session_id || cookieSessionId,
+						uid: data.result.uid,
+						userContext: data.result.user_context || {},
+						db: data.result.db || this.db,
+						isApiKey: false,
+					};
+
+					console.log(
+						`[OdooClient] Session Auth successful. Session ID: ${this.session.sessionId.substring(0, 8)}... (UID: ${this.session.uid})`,
+					);
+					return this.session;
+				}
+			}
+		} catch (sessionErr) {
+			console.warn(
+				"[OdooClient] /web/session/authenticate failed, falling back to JSON-RPC API Key auth:",
+				sessionErr,
+			);
+		}
+
+		// Fallback for Odoo API Keys via /jsonrpc service: "common", method: "authenticate"
+		console.log(
+			`[OdooClient] Attempting JSON-RPC API Key authentication to ${this.url}...`,
+		);
+		const jsonRpcRes = await fetch(`${this.url}/jsonrpc`, {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",
@@ -64,52 +119,44 @@ export class OdooClient {
 				jsonrpc: "2.0",
 				method: "call",
 				params: {
-					db: this.db,
-					login: this.username,
-					password: this.password,
+					service: "common",
+					method: "authenticate",
+					args: [this.db, this.username, this.password, {}],
 				},
+				id: 1,
 			}),
 		});
 
-		if (!response.ok) {
+		if (!jsonRpcRes.ok) {
 			throw new Error(
-				`HTTP Error during authentication: ${response.status} ${response.statusText}`,
+				`HTTP Error during JSON-RPC authentication: ${jsonRpcRes.status} ${jsonRpcRes.statusText}`,
 			);
 		}
 
-		// Grabbing the session cookie from headers (if set-cookie is present)
-		const setCookie = response.headers.get("set-cookie");
-		let cookieSessionId = "";
-		if (setCookie) {
-			const match = setCookie.match(/session_id=([^;]+)/);
-			if (match) {
-				cookieSessionId = match[1];
-			}
-		}
-
-		const data = await response.json();
-		if (data.error) {
+		const jsonRpcData = await jsonRpcRes.json();
+		if (jsonRpcData.error) {
 			throw new Error(
-				`Odoo Authentication Failed: ${data.error.message} - ${JSON.stringify(data.error.data)}`,
+				`Odoo API Key Authentication Failed: ${jsonRpcData.error.message} - ${JSON.stringify(jsonRpcData.error.data)}`,
 			);
 		}
 
-		const result = data.result;
-		if (!result?.uid) {
+		const uid = jsonRpcData.result;
+		if (typeof uid !== "number" || uid <= 0) {
 			throw new Error(
-				"Odoo Authentication Failed: Invalid response payload (missing uid).",
+				"Odoo Authentication Failed: Invalid API Key or user credentials.",
 			);
 		}
 
 		this.session = {
-			sessionId: result.session_id || cookieSessionId,
-			uid: result.uid,
-			userContext: result.user_context || {},
-			db: result.db || this.db,
+			sessionId: `apikey_session_${uid}`,
+			uid,
+			userContext: { lang: "en_US", tz: "Asia/Kolkata" },
+			db: this.db,
+			isApiKey: true,
 		};
 
 		console.log(
-			`[OdooClient] Auth successful. Session ID: ${this.session.sessionId.substring(0, 8)}... (UID: ${this.session.uid})`,
+			`[OdooClient] API Key JSON-RPC Auth successful. (UID: ${this.session.uid})`,
 		);
 		return this.session;
 	}
@@ -147,27 +194,55 @@ export class OdooClient {
 			const timer = setTimeout(() => controller.abort(), timeoutMs);
 			let response: Response;
 			try {
-				response = await fetch(`${this.url}/web/dataset/call_kw`, {
-					method: "POST",
-					headers: {
-						"Content-Type": "application/json",
-						Cookie: `session_id=${this.session?.sessionId}`,
-					},
-					body: JSON.stringify({
-						jsonrpc: "2.0",
-						method: "call",
-						params: {
-							model,
-							method,
-							args,
-							kwargs: {
-								context: this.session?.userContext,
-								...kwargs,
-							},
+				if (this.session?.isApiKey) {
+					response = await fetch(`${this.url}/jsonrpc`, {
+						method: "POST",
+						headers: {
+							"Content-Type": "application/json",
 						},
-					}),
-					signal: controller.signal,
-				});
+						body: JSON.stringify({
+							jsonrpc: "2.0",
+							method: "call",
+							params: {
+								service: "object",
+								method: "execute_kw",
+								args: [
+									this.db,
+									this.session.uid,
+									this.password,
+									model,
+									method,
+									args,
+									kwargs,
+								],
+							},
+							id: Date.now(),
+						}),
+						signal: controller.signal,
+					});
+				} else {
+					response = await fetch(`${this.url}/web/dataset/call_kw`, {
+						method: "POST",
+						headers: {
+							"Content-Type": "application/json",
+							Cookie: `session_id=${this.session?.sessionId}`,
+						},
+						body: JSON.stringify({
+							jsonrpc: "2.0",
+							method: "call",
+							params: {
+								model,
+								method,
+								args,
+								kwargs: {
+									context: this.session?.userContext,
+									...kwargs,
+								},
+							},
+						}),
+						signal: controller.signal,
+					});
+				}
 			} catch (err: any) {
 				const elapsedMs = Date.now() - startedAt;
 				if (err.name === "AbortError") {

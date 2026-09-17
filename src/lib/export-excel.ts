@@ -34,10 +34,8 @@ export function exportToExcel(
 
 /** Store token used in export filenames and the Summary sheet. */
 export function storeExportToken(store: string | null | undefined): string {
-	if (!store || store === "ALL") return "Both";
-	if (store === "Klj store") return "KLJ";
-	if (store === "SmartworksNoida Noida") return "SWN";
-	return store.replace(/[^a-zA-Z0-9]/g, "");
+	if (!store || store === "ALL" || store === "All Stores") return "All_Stores";
+	return store.trim().replace(/[^a-zA-Z0-9]/g, "_");
 }
 
 /** Compact YYYY-MM (or YYYY-MM-DD_to_YYYY-MM-DD) token for filenames. */

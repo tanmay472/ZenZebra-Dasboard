@@ -104,13 +104,16 @@ export async function getTodaySales(): Promise<ToolResult> {
 				COUNT(DISTINCT order_id)::int AS orders,
 				ROUND(COALESCE(SUM(net_amount) / NULLIF(COUNT(DISTINCT order_id), 0), 0)::numeric, 2) AS aov
 			FROM sales_fact_v
-			WHERE sale_date = CURRENT_DATE
+			WHERE sale_date = (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Kolkata')::date
 		`;
 		const freshness = await getDataFreshness();
+		const todayKolkata = new Intl.DateTimeFormat("en-CA", {
+			timeZone: "Asia/Kolkata",
+		}).format(new Date());
 		return {
 			success: true,
 			data: {
-				date: new Date().toISOString().split("T")[0],
+				date: todayKolkata,
 				revenue: Number(row.revenue),
 				collection: Number(row.collection),
 				gst: Number(row.gst),
@@ -139,14 +142,15 @@ export async function getSalesSummary(args: {
 	date?: string;
 	store?: string;
 }): Promise<ToolResult> {
-	const date = isValidDate(args.date)
-		? args.date
-		: new Date().toISOString().split("T")[0];
-	const todayStr = new Date().toISOString().split("T")[0];
+	const todayKolkata = new Intl.DateTimeFormat("en-CA", {
+		timeZone: "Asia/Kolkata",
+	}).format(new Date());
+	const date = isValidDate(args.date) ? args.date : todayKolkata;
+	const todayStr = todayKolkata;
 	const isPeriodComplete = date < todayStr;
 	const storeFilter = args.store ? `%${args.store.trim()}%` : null;
 
-	const prev = new Date(date);
+	const prev = new Date(`${date}T12:00:00Z`);
 	prev.setUTCDate(prev.getUTCDate() - 1);
 	const previousDate = prev.toISOString().split("T")[0];
 

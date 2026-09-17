@@ -14,15 +14,33 @@ export const DATE_PRESETS = [
 
 export type DatePresetValue = (typeof DATE_PRESETS)[number]["value"];
 
+/**
+ * Formats a Date to YYYY-MM-DD in the Asia/Kolkata (IST) timezone.
+ */
+export function toKolkataISODate(date: Date = new Date()): string {
+	return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" }).format(
+		date,
+	);
+}
+
 function toISODate(date: Date) {
-	return date.toISOString().slice(0, 10);
+	return toKolkataISODate(date);
+}
+
+/**
+ * Returns a reference Date representing current Indian Standard Time (IST).
+ */
+function getKolkataNow(): Date {
+	const str = toKolkataISODate(new Date());
+	const [y, m, d] = str.split("-").map(Number);
+	return new Date(Date.UTC(y, m - 1, d, 12, 0, 0));
 }
 
 /** Client-side date math for the quick-range presets. "custom" returns null (caller keeps existing dates). */
 export function getPresetRange(
 	preset: string,
 ): { startDate: string; endDate: string } | null {
-	const today = new Date();
+	const today = getKolkataNow();
 
 	if (preset === "today") {
 		return { startDate: toISODate(today), endDate: toISODate(today) };

@@ -73,12 +73,6 @@ const CustomTooltip = ({ active, payload }: any) => {
 	return null;
 };
 
-const STORE_DISPLAY_NAMES: Record<string, string> = {
-	"Klj store": "KLJ Store KPIs",
-	"SmartworksNoida Noida": "Smart Works Noida KPIs",
-	"Head office": "Head office",
-};
-
 const waterfallChartConfig = {
 	mrpValue: {
 		color: "var(--chart-1)",
@@ -857,9 +851,7 @@ export default function SalesDashboardPage() {
 						<div className="grid gap-4 md:grid-cols-2 mt-4">
 							{data.storePerformance.map((storeKpi: any) => {
 								const storeName = storeKpi.billedBy;
-								const displayName =
-									STORE_DISPLAY_NAMES[storeName] ??
-									`${formatStoreName(storeName)} KPIs`;
+								const displayName = `${formatStoreName(storeName)} KPIs`;
 
 								return (
 									<Card key={storeName} className="border-border bg-card/40">
