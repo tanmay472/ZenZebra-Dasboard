@@ -1,6 +1,10 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { getFinanceSummary } from "@/lib/repositories/finance.repository";
 
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export async function GET(req: NextRequest) {
 	try {
 		const searchParams = req.nextUrl.searchParams;

@@ -14,6 +14,8 @@ import type { DashboardFilters } from "@/lib/founder/types";
 import { getStoreDiagnostics } from "@/lib/intelligence/store-diagnostics";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 function getPeriodResponseLabel(startDate: string, endDate: string): string {
 	const monthsFull = [

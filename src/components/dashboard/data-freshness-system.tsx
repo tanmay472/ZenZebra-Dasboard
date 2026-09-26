@@ -213,7 +213,7 @@ function SyncTriggerButton({ onSyncComplete }: { onSyncComplete: () => void }) {
 		setSyncResult(null);
 
 		try {
-			const res = await fetch("/api/cron/odoo-sync", {
+			const res = await fetch("/api/cron/odoo-sync?force=true", {
 				method: "GET",
 				headers: {
 					Authorization: "Bearer zenzebra_cron_secret_2026",

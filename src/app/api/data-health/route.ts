@@ -2,18 +2,20 @@ import { type NextRequest, NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export async function GET(_req: NextRequest) {
 	try {
-		// 1. Total rows in sales_fact
+		// 1. Total rows in sales_fact_v (blends legacy Excel + live Odoo)
 		const totalRowsResult = await sql`
-			SELECT COUNT(*)::int as count FROM sales_fact
+			SELECT COUNT(*)::int as count FROM sales_fact_v
 		`;
 		const totalRows = totalRowsResult[0]?.count || 0;
 
 		// 2. Date range
 		const dateRangeResult = await sql`
-			SELECT MIN(sale_date) as start_date, MAX(sale_date) as end_date FROM sales_fact
+			SELECT MIN(sale_date) as start_date, MAX(sale_date) as end_date FROM sales_fact_v
 		`;
 		const rawStart = dateRangeResult[0]?.start_date;
 		const rawEnd = dateRangeResult[0]?.end_date;
@@ -35,7 +37,7 @@ export async function GET(_req: NextRequest) {
 		// 3. Stores detected (canonical and total rows)
 		const storesResult = await sql`
 			SELECT billed_by as name, COUNT(*)::int as count 
-			FROM sales_fact 
+			FROM sales_fact_v 
 			GROUP BY billed_by 
 			ORDER BY count DESC
 		`;
@@ -51,7 +53,7 @@ export async function GET(_req: NextRequest) {
 
 		// 5. Missing dates (calculated in TS for robustness)
 		const activeDatesResult = await sql`
-			SELECT DISTINCT sale_date FROM sales_fact ORDER BY sale_date
+			SELECT DISTINCT sale_date FROM sales_fact_v ORDER BY sale_date
 		`;
 		const activeDates = new Set(
 			activeDatesResult.map((r: any) => formatDbDate(r.sale_date) || ""),
@@ -80,23 +82,22 @@ export async function GET(_req: NextRequest) {
 		const duplicateBillsResult = await sql`
 			SELECT COUNT(*)::int as count FROM (
 				SELECT sale_date, bill_no 
-				FROM sales_fact 
+				FROM sales_fact_v 
 				GROUP BY sale_date, bill_no 
 				HAVING COUNT(DISTINCT billed_by) > 1
 			) t
 		`;
 		const duplicateBillsCount = duplicateBillsResult[0]?.count || 0;
 
-		// 7. Invalid stores (billed_by values that are not whitelisted)
-		const _whitelist = ["SmartworksNoida Noida", "Klj store"];
+		// 7. Unattributed stores (billed_by values that are empty or null)
 		const invalidStoresResult = await sql`
 			SELECT billed_by as name, COUNT(*)::int as count
-			FROM sales_fact
-			WHERE billed_by NOT IN ('SmartworksNoida Noida', 'Klj store')
+			FROM sales_fact_v
+			WHERE billed_by IS NULL OR billed_by = ''
 			GROUP BY billed_by
 		`;
 		const invalidStores = invalidStoresResult.map((r: any) => ({
-			name: r.name,
+			name: r.name || "Unknown",
 			count: r.count,
 		}));
 		const invalidStoresCount = invalidStores.reduce(
