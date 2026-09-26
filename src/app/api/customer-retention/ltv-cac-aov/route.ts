@@ -9,6 +9,8 @@ import { getCacReportData } from "@/lib/services/cac.service";
 import { getLtvReportData, getTopCustomers } from "@/lib/services/ltv.service";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export async function GET(req: NextRequest) {
 	try {
@@ -17,10 +19,6 @@ export async function GET(req: NextRequest) {
 
 		const store = searchParams.get("store") || null;
 		const storeParam = store === "ALL" ? undefined : store || undefined;
-
-		// Date bounds defaults
-		const _startDate = searchParams.get("startDate") || "2025-11-18";
-		const _endDate = searchParams.get("endDate") || "2026-06-24";
 
 		const filters = cleanDashboardFilters({
 			startDate: searchParams.get("startDate") ?? defaults.startDate,

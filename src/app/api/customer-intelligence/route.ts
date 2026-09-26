@@ -24,6 +24,8 @@ import { sql } from "@/lib/db";
 import type { DashboardFilters } from "@/lib/founder/types";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 function getDefaultDateRange() {
 	const defaults = getDefaultPeriod();

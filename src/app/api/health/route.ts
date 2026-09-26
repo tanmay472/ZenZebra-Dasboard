@@ -6,6 +6,8 @@ import { getWorkerHeartbeat } from "@/lib/repositories/odoo.repository";
 const HEARTBEAT_FRESHNESS_SECONDS = 120;
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export async function GET(_req: NextRequest) {
 	const startTime = Date.now();
@@ -134,7 +136,9 @@ export async function GET(_req: NextRequest) {
 		healthReport.checks.odooSaaS = {
 			status: "connected",
 			uid,
-			url: process.env.ODOO_URL || "https://zenzebra1.odoo.com",
+			url:
+				process.env.ODOO_URL ||
+				(client.getMockModeStatus() ? "mock" : "configured"),
 			latencyMs: Date.now() - authStart,
 		};
 	} catch (err) {
