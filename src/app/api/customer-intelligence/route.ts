@@ -43,81 +43,81 @@ const CACHE_TTL_SECONDS = 300;
  * upload invalidates it. Keyed by the serialized cleaned filters. Business logic
  * only; the live-SQL engines remain the source of truth (verified by the harness).
  */
+async function computeCustomerIntelligence(filtersJson: string) {
+	const filters = JSON.parse(filtersJson) as DashboardFilters;
+	const periods = getComparisonPeriods(filters);
+
+	// Lifetime engines may read the materialized layer only in the proven-parity
+	// range (no cat/brand/sku filter, as-of-latest). Otherwise they scan live.
+	const useMv = await shouldUseCustomerMv(sql, filters, periods.currentEnd);
+
+	const [
+		retentionCohort,
+		revenueComposition,
+		valueDistribution,
+		identityConfidence,
+		concentration,
+	] = await Promise.all([
+		getRetentionCohort(sql, periods, filters),
+		getRevenueComposition(sql, periods, filters),
+		getValueDistribution(sql, periods, filters, useMv),
+		getIdentityConfidence(sql, periods, filters),
+		getCustomerConcentration(sql, periods, filters, useMv),
+	]);
+
+	// Derived (pure) intelligence built from the query results above.
+	const month1RetentionPct = headlineMonth1Retention(
+		retentionCohort,
+		periods.currentEnd,
+	);
+	const repeatCard = revenueComposition.cards.find((c) => c.key === "repeat");
+	const newCard = revenueComposition.cards.find((c) => c.key === "new");
+	const anonCard = revenueComposition.cards.find((c) => c.key === "anonymous");
+	const lifetimeLtv = Math.round(
+		safeDiv(
+			valueDistribution.totals.revenue,
+			valueDistribution.totals.customers,
+		),
+	);
+
+	const qualityScore = computeRevenueQualityScore({
+		repeatRevenuePct: repeatCard?.revenuePct ?? 0,
+		newRevenuePct: newCard?.revenuePct ?? 0,
+		anonymousRevenuePct: anonCard?.revenuePct ?? 0,
+		month1RetentionPct,
+		aov: revenueComposition.totals.aov,
+		ltv: lifetimeLtv,
+	});
+
+	const insights = buildCustomerInsights({
+		composition: revenueComposition,
+		distribution: valueDistribution,
+		concentration,
+		month1RetentionPct,
+	});
+
+	const reconciliation = combine([
+		revenueComposition.reconciliation,
+		valueDistribution.reconciliation,
+	]);
+
+	return {
+		filters,
+		periods,
+		comparisonLabel: periods.comparisonLabel,
+		retentionCohort,
+		revenueComposition,
+		valueDistribution,
+		identityConfidence,
+		concentration,
+		qualityScore,
+		insights,
+		reconciliation,
+	};
+}
+
 const buildCustomerIntelligence = unstable_cache(
-	async (filtersJson: string) => {
-		const filters = JSON.parse(filtersJson) as DashboardFilters;
-		const periods = getComparisonPeriods(filters);
-
-		// Lifetime engines may read the materialized layer only in the proven-parity
-		// range (no cat/brand/sku filter, as-of-latest). Otherwise they scan live.
-		const useMv = await shouldUseCustomerMv(sql, filters, periods.currentEnd);
-
-		const [
-			retentionCohort,
-			revenueComposition,
-			valueDistribution,
-			identityConfidence,
-			concentration,
-		] = await Promise.all([
-			getRetentionCohort(sql, periods, filters),
-			getRevenueComposition(sql, periods, filters),
-			getValueDistribution(sql, periods, filters, useMv),
-			getIdentityConfidence(sql, periods, filters),
-			getCustomerConcentration(sql, periods, filters, useMv),
-		]);
-
-		// Derived (pure) intelligence built from the query results above.
-		const month1RetentionPct = headlineMonth1Retention(
-			retentionCohort,
-			periods.currentEnd,
-		);
-		const repeatCard = revenueComposition.cards.find((c) => c.key === "repeat");
-		const newCard = revenueComposition.cards.find((c) => c.key === "new");
-		const anonCard = revenueComposition.cards.find(
-			(c) => c.key === "anonymous",
-		);
-		const lifetimeLtv = Math.round(
-			safeDiv(
-				valueDistribution.totals.revenue,
-				valueDistribution.totals.customers,
-			),
-		);
-
-		const qualityScore = computeRevenueQualityScore({
-			repeatRevenuePct: repeatCard?.revenuePct ?? 0,
-			newRevenuePct: newCard?.revenuePct ?? 0,
-			anonymousRevenuePct: anonCard?.revenuePct ?? 0,
-			month1RetentionPct,
-			aov: revenueComposition.totals.aov,
-			ltv: lifetimeLtv,
-		});
-
-		const insights = buildCustomerInsights({
-			composition: revenueComposition,
-			distribution: valueDistribution,
-			concentration,
-			month1RetentionPct,
-		});
-
-		const reconciliation = combine([
-			revenueComposition.reconciliation,
-			valueDistribution.reconciliation,
-		]);
-
-		return {
-			filters,
-			periods,
-			comparisonLabel: periods.comparisonLabel,
-			retentionCohort,
-			revenueComposition,
-			valueDistribution,
-			identityConfidence,
-			concentration,
-			qualityScore,
-			insights,
-			reconciliation,
-		};
-	},
+	computeCustomerIntelligence,
 	[CUSTOMER_INTELLIGENCE_TAG],
 	{ revalidate: CACHE_TTL_SECONDS, tags: [CUSTOMER_INTELLIGENCE_TAG] },
 );
@@ -151,7 +151,21 @@ export async function GET(req: NextRequest) {
 			compareEndDate: searchParams.get("compareEndDate") ?? undefined,
 		} satisfies DashboardFilters);
 
-		const data = await buildCustomerIntelligence(JSON.stringify(filters));
+		let data: Awaited<ReturnType<typeof computeCustomerIntelligence>>;
+		try {
+			data = await buildCustomerIntelligence(JSON.stringify(filters));
+		} catch (cacheErr: unknown) {
+			const errMsg =
+				cacheErr instanceof Error ? cacheErr.message : String(cacheErr);
+			if (
+				errMsg.includes("incrementalCache missing") ||
+				errMsg.includes("Invariant")
+			) {
+				data = await computeCustomerIntelligence(JSON.stringify(filters));
+			} else {
+				throw cacheErr;
+			}
+		}
 
 		return NextResponse.json({ success: true, data });
 	} catch (error) {
