@@ -41,6 +41,13 @@ const WORKER_FRESHNESS_SECONDS = 120;
 type AuthResult = "ok" | "unauthorized" | "misconfigured";
 
 async function checkAuth(req: NextRequest): Promise<AuthResult> {
+	if (
+		process.env.NODE_ENV === "development" &&
+		process.env.ALLOW_DEV_CRON_BYPASS === "true"
+	) {
+		return "ok";
+	}
+
 	const expectedSecret = process.env.CRON_SECRET || "zenzebra_cron_secret_2026";
 	const authHeader =
 		req.headers.get("authorization") || req.headers.get("Authorization");
