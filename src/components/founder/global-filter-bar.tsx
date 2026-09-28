@@ -25,16 +25,17 @@ export interface ProductSuggestion {
 const AUTOCOMPLETE_DEBOUNCE_MS = 250;
 
 export function formatStoreName(name: string): string {
+	if (!name) return "";
 	if (name === "Klj store") return "KLJ";
 	if (name === "SmartworksNoida Noida") return "Smart Works Noida";
 	if (name === "Head office" || name === "Head Office") return "Head office";
+	// Generic camelCase boundary splitter: preserves uppercase acronyms (e.g. HQ27GGN, KLJ, SWN)
+	// while cleanly separating camelCase words (e.g. ZenZebra -> Zen Zebra)
 	return name
-		.replace(/([A-Z])/g, " $1")
+		.replace(/([a-z])([A-Z])/g, "$1 $2")
 		.replace(/[_-]/g, " ")
-		.trim()
-		.split(/\s+/)
-		.map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
-		.join(" ");
+		.replace(/\s+/g, " ")
+		.trim();
 }
 
 interface GlobalFilterBarProps {

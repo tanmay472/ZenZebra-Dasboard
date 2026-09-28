@@ -9,6 +9,8 @@ import type { DashboardFilters } from "@/lib/founder/types";
 import { getCacMetrics } from "@/lib/services/cac.service";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export async function GET(req: NextRequest) {
 	try {

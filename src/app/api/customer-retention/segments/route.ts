@@ -9,6 +9,8 @@ import type { DashboardFilters } from "@/lib/founder/types";
 import { getCustomerSegments } from "@/lib/services/retention.service";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export async function GET(req: NextRequest) {
 	try {

@@ -3,6 +3,8 @@ import { sql } from "@/lib/db";
 import { getLatestTelemetryStatus } from "@/lib/repositories/odoo.repository";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export async function GET() {
 	try {
